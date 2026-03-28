@@ -160,7 +160,7 @@ def save_local(results: list[dict], summary: dict):
 
 
 def save_supabase(results: list[dict], summary: dict):
-    """Save scan results to Supabase."""
+    """Save scan results to Supabase (servers + scores tables)."""
     try:
         from supabase import create_client
     except ImportError:
@@ -178,6 +178,7 @@ def save_supabase(results: list[dict], summary: dict):
 
     for result in results:
         try:
+            # 1. Upsert server and get ID back
             server_data = {
                 "source": "smithery",
                 "server_name": result["server_name"],
@@ -187,9 +188,45 @@ def save_supabase(results: list[dict], summary: dict):
                 "raw_data": result.get("server_meta", {}),
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
-            client.table("servers").upsert(
+            srv_resp = client.table("servers").upsert(
                 server_data, on_conflict="source,server_name"
             ).execute()
+
+            if not srv_resp.data:
+                continue
+            server_id = srv_resp.data[0]["id"]
+
+            # 2. Insert score into scores table
+            # Use server-level average scores
+            tools = result.get("tools", [])
+            if tools:
+                f_avg = sum(t["dimensions"]["findability"] for t in tools) / len(tools)
+                c_avg = sum(t["dimensions"]["clarity"] for t in tools) / len(tools)
+                p_avg = sum(t["dimensions"]["precision"] for t in tools) / len(tools)
+                e_avg = sum(t["dimensions"]["efficiency"] for t in tools) / len(tools)
+            else:
+                f_avg = c_avg = p_avg = e_avg = 0
+
+            total = result.get("average_score", 0)
+            if total >= 85: level, level_name = 4, "Dominant"
+            elif total >= 70: level, level_name = 3, "Preferred"
+            elif total >= 50: level, level_name = 2, "Selectable"
+            elif total >= 25: level, level_name = 1, "Visible"
+            else: level, level_name = 0, "Absent"
+
+            score_data = {
+                "server_id": server_id,
+                "findability": round(f_avg, 1),
+                "clarity": round(c_avg, 1),
+                "precision": round(p_avg, 1),
+                "efficiency": round(e_avg, 1),
+                "total_score": round(total, 1),
+                "level": level,
+                "level_name": level_name,
+                "scoring_level": "A",
+            }
+            client.table("scores").insert(score_data).execute()
+
             saved += 1
         except Exception as e:
             log.error(f"Supabase write error for {result['server_name']}: {e}")
