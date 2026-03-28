@@ -40,83 +40,144 @@ const articleSchema = {
 >
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
-  <article style="padding: 3rem 0 4rem;">
-    <div class="container" style="max-width: 720px;">
-      <header style="margin-bottom: 2rem;">
-        <p style="font-size: 0.8rem; color: var(--color-text-tertiary); margin-bottom: 0.5rem;">
+  <article style="padding: 4rem 0 5rem;">
+    <div class="container" style="max-width: 680px;">
+      <header style="margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--color-border);">
+        <p style="font-size: 0.8rem; color: var(--color-accent); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
           {new Date(post.data.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-          {post.data.author && ` · ${post.data.author}`}
         </p>
-        <h1 style="font-size: 2rem; font-weight: 700; line-height: 1.3;">
+        <h1 style="font-size: 2.25rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; margin-bottom: 1rem;">
           {post.data.title}
         </h1>
+        <p style="font-size: 1rem; color: var(--color-text-secondary); line-height: 1.6;">
+          {post.data.description}
+        </p>
+        {post.data.author && (
+          <p style="font-size: 0.8rem; color: var(--color-text-tertiary); margin-top: 1rem;">
+            By {post.data.author}
+          </p>
+        )}
       </header>
 
       <div class="prose">
         <Content />
       </div>
 
-      <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--color-border);">
-        <a href="/blog" style="font-size: 0.85rem; color: var(--color-accent);">← Back to blog</a>
+      <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;">
+        <a href="/blog" style="font-size: 0.85rem; color: var(--color-accent); text-decoration: none;">← Back to blog</a>
+        <a href="/score" style="font-size: 0.85rem; color: var(--color-text-tertiary); text-decoration: none;">Score your tools →</a>
       </footer>
     </div>
   </article>
 
   <style>
     .prose {
-      font-size: 0.95rem;
-      line-height: 1.8;
+      font-size: 1.05rem;
+      line-height: 2;
       color: var(--color-text-secondary);
+      letter-spacing: 0.01em;
     }
     .prose h2 {
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: 1.4rem;
+      font-weight: 700;
       color: var(--color-text);
-      margin-top: 2rem;
-      margin-bottom: 0.75rem;
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
     }
     .prose h3 {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 600;
       color: var(--color-text);
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
     }
     .prose p {
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
     .prose strong {
       color: var(--color-text);
+      font-weight: 600;
     }
     .prose a {
       color: var(--color-accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+    }
+    .prose a:hover {
+      text-decoration-color: var(--color-accent);
+    }
+    .prose blockquote {
+      border-left: 3px solid var(--color-accent);
+      padding: 0.75rem 1.25rem;
+      margin: 1.5rem 0;
+      background: var(--color-bg-alt);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-style: italic;
+      color: var(--color-text-secondary);
+    }
+    .prose blockquote p {
+      margin-bottom: 0;
     }
     .prose table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1.5rem 0;
-      font-size: 0.85rem;
+      margin: 2rem 0;
+      font-size: 0.875rem;
     }
     .prose th, .prose td {
-      padding: 0.5rem 0.75rem;
+      padding: 0.65rem 1rem;
       border-bottom: 1px solid var(--color-border);
       text-align: left;
     }
     .prose th {
       color: var(--color-text-tertiary);
-      font-weight: 500;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
     .prose ul, .prose ol {
       padding-left: 1.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 1.5rem;
     }
     .prose li {
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .prose li::marker {
+      color: var(--color-accent);
     }
     .prose hr {
       border: none;
       border-top: 1px solid var(--color-border);
-      margin: 2rem 0;
+      margin: 3rem 0;
+    }
+    .prose code {
+      font-size: 0.85em;
+      background: var(--color-bg-alt);
+      padding: 0.2em 0.45em;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+    .prose pre {
+      background: var(--color-bg-alt);
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+    .prose pre code {
+      background: none;
+      padding: 0;
+    }
+    .prose img {
+      max-width: 100%;
+      border-radius: var(--radius);
+      margin: 1.5rem 0;
     }
   </style>
 </Layout>
