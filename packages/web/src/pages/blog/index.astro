@@ -12,35 +12,35 @@ const posts = (await getCollection('blog'))
   description="ATO insights, MCP ecosystem analysis, and agent tool optimization strategies. Data-driven articles updated daily."
 >
   <section style="padding: 3rem 0 1.5rem;">
-    <div class="container" style="max-width: 720px;">
+    <div class="w" style="max-width: 720px;">
       <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Blog</h1>
-      <p style="color: var(--color-text-secondary); font-size: 0.9rem;">
+      <p style="color: var(--fg-2); font-size: 0.9rem;">
         ATO insights and MCP ecosystem analysis.
       </p>
     </div>
   </section>
 
   <section style="padding: 0 0 4rem;">
-    <div class="container" style="max-width: 720px;">
+    <div class="w" style="max-width: 720px;">
       {posts.length > 0 ? (
         <div style="display: flex; flex-direction: column; gap: 1.5rem;">
           {posts.map(post => (
-            <a href={`/blog/${post.id}`} style="display: block; padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius); text-decoration: none; transition: border-color 0.2s, background 0.2s;" onmouseover="this.style.borderColor='var(--color-accent)';this.style.background='var(--color-bg-alt)'" onmouseout="this.style.borderColor='var(--color-border)';this.style.background='transparent'">
-              <p style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-bottom: 0.5rem;">
+            <a href={`/blog/${post.id}`} style="display: block; padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--r); text-decoration: none; transition: border-color 0.2s, background 0.2s;" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-s)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='transparent'">
+              <p style="font-size: 0.75rem; color: var(--fg-4); margin-bottom: 0.5rem;">
                 {new Date(post.data.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 {post.data.author && ` · ${post.data.author}`}
               </p>
-              <h2 style="font-size: 1.15rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.5rem; line-height: 1.4;">
+              <h2 style="font-size: 1.15rem; font-weight: 600; color: var(--fg); margin-bottom: 0.5rem; line-height: 1.4;">
                 {post.data.title}
               </h2>
-              <p style="font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6;">
+              <p style="font-size: 0.875rem; color: var(--fg-2); line-height: 1.6;">
                 {post.data.description}
               </p>
             </a>
           ))}
         </div>
       ) : (
-        <p style="color: var(--color-text-tertiary); font-size: 0.9rem;">No posts yet.</p>
+        <p style="color: var(--fg-4); font-size: 0.9rem;">No posts yet.</p>
       )}
     </div>
   </section>

@@ -7,16 +7,16 @@ import Layout from '../layouts/Layout.astro';
   description="Get your free ToolRank Score. Paste your MCP tool definition and see how AI agents evaluate your tools across Findability, Clarity, Precision, and Efficiency."
 >
   <section style="padding: 3rem 0;">
-    <div class="container" style="max-width: 800px;">
+    <div class="w" style="max-width: 800px;">
       <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Score your tools</h1>
-      <p style="color: var(--color-text-secondary); margin-bottom: 2rem; font-size: 0.9rem;">
+      <p style="color: var(--fg-2); margin-bottom: 2rem; font-size: 0.9rem;">
         Paste your MCP tool definition JSON below. Get your ToolRank Score with specific improvements.
       </p>
     </div>
   </section>
 
   <section style="padding: 0 0 4rem;">
-    <div class="container" style="max-width: 800px;">
+    <div class="w" style="max-width: 800px;">
       <!-- React island: only this component loads JS -->
       <div id="score-app"></div>
     </div>
@@ -207,17 +207,17 @@ import Layout from '../layouts/Layout.astro';
             Paste your MCP tool definition (JSON)
           </label>
           <textarea id="tool-input" rows="12" placeholder='${exampleJson.replace(/'/g, "&#39;")}'
-            style="width: 100%; padding: 0.75rem; font-family: var(--font-mono); font-size: 0.8rem;
-            border: 1px solid var(--color-border); border-radius: var(--radius);
-            background: var(--color-bg-alt); color: var(--color-text); resize: vertical;
+            style="width: 100%; padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
+            border: 1px solid var(--border); border-radius: var(--r);
+            background: var(--bg-s); color: var(--fg); resize: vertical;
             line-height: 1.5;"></textarea>
-          <p style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 0.25rem;">
+          <p style="font-size: 0.75rem; color: var(--fg-4); margin-top: 0.25rem;">
             Supports single tool or {"tools": [...]} server format
           </p>
         </div>
         <button id="score-btn" onclick="runScore()"
-          style="align-self: flex-start; padding: 0.65rem 1.5rem; background: var(--color-accent);
-          color: white; border: none; border-radius: var(--radius); font-weight: 600;
+          style="align-self: flex-start; padding: 0.65rem 1.5rem; background: var(--accent);
+          color: white; border: none; border-radius: var(--r); font-weight: 600;
           font-size: 0.85rem; cursor: pointer;">
           Score
         </button>
@@ -230,7 +230,7 @@ import Layout from '../layouts/Layout.astro';
       const results = document.getElementById('results');
       
       if (!input) {
-        results.innerHTML = '<p style="color: var(--color-danger); font-size: 0.85rem;">Paste a tool definition JSON to score.</p>';
+        results.innerHTML = '<p style="color: var(--err); font-size: 0.85rem;">Paste a tool definition JSON to score.</p>';
         return;
       }
       
@@ -238,7 +238,7 @@ import Layout from '../layouts/Layout.astro';
       try {
         data = JSON.parse(input);
       } catch (e) {
-        results.innerHTML = `<p style="color: var(--color-danger); font-size: 0.85rem;">Invalid JSON: ${e.message}</p>`;
+        results.innerHTML = `<p style="color: var(--err); font-size: 0.85rem;">Invalid JSON: ${e.message}</p>`;
         return;
       }
       
@@ -254,27 +254,27 @@ import Layout from '../layouts/Layout.astro';
       const scores = tools.map(t => scoreToolBrowser(t));
       const avg = scores.reduce((s, t) => s + t.total, 0) / scores.length;
       
-      const sevColors = { critical: 'var(--color-danger)', warning: 'var(--color-warning)', info: 'var(--color-text-tertiary)' };
+      const sevColors = { critical: 'var(--err)', warning: 'var(--warn)', info: 'var(--fg-4)' };
       const sevIcons = { critical: '✗', warning: '⚠', info: 'ℹ' };
-      const levelColors = ['var(--color-danger)', 'var(--color-warning)', 'var(--color-text-secondary)', 'var(--color-success)', 'var(--color-accent)'];
+      const levelColors = ['var(--err)', 'var(--warn)', 'var(--fg-2)', 'var(--ok)', 'var(--accent)'];
       
       let html = `
-        <div style="padding: 1.5rem; border: 2px solid var(--color-accent); border-radius: var(--radius); margin-bottom: 1.5rem; background: color-mix(in srgb, var(--color-accent) 5%, transparent);">
+        <div style="padding: 1.5rem; border: 2px solid var(--accent); border-radius: var(--r); margin-bottom: 1.5rem; background: color-mix(in srgb, var(--accent) 5%, transparent);">
           <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-size: 2.5rem; font-weight: 700; color: var(--color-accent);">${Math.round(avg)}</span>
-            <span style="font-size: 1rem; color: var(--color-text-tertiary);">/ 100</span>
+            <span style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${Math.round(avg)}</span>
+            <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
           </div>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">${scores.length} tool${scores.length > 1 ? 's' : ''} analyzed</p>
+          <p style="font-size: 0.85rem; color: var(--fg-2);">${scores.length} tool${scores.length > 1 ? 's' : ''} analyzed</p>
         </div>
       `;
       
       for (const ts of scores) {
         const pct = Math.round(ts.total);
         html += `
-          <div style="border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;">
+          <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; font-family: var(--font-mono);">${ts.name}</h3>
-              <span style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--color-bg-alt); color: ${levelColors[ts.level]}; font-weight: 500;">
+              <h3 style="font-size: 1rem; font-weight: 600; font-family: var(--mono);">${ts.name}</h3>
+              <span style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--bg-s); color: ${levelColors[ts.level]}; font-weight: 500;">
                 Level ${ts.level}: ${ts.levelName}
               </span>
             </div>
@@ -287,9 +287,9 @@ import Layout from '../layouts/Layout.astro';
                 return `
                   <div style="text-align: center;">
                     <div style="font-size: 1.25rem; font-weight: 600;">${val}</div>
-                    <div style="font-size: 0.65rem; color: var(--color-text-tertiary); text-transform: capitalize;">${dim} / ${max}</div>
-                    <div style="height: 3px; background: var(--color-border); border-radius: 2px; margin-top: 0.35rem;">
-                      <div style="height: 100%; width: ${pctDim}%; background: var(--color-accent); border-radius: 2px;"></div>
+                    <div style="font-size: 0.65rem; color: var(--fg-4); text-transform: capitalize;">${dim} / ${max}</div>
+                    <div style="height: 3px; background: var(--border); border-radius: 2px; margin-top: 0.35rem;">
+                      <div style="height: 100%; width: ${pctDim}%; background: var(--accent); border-radius: 2px;"></div>
                     </div>
                   </div>
                 `;
@@ -297,19 +297,19 @@ import Layout from '../layouts/Layout.astro';
             </div>
             
             ${ts.issues.length > 0 ? `
-              <div style="border-top: 1px solid var(--color-border); padding-top: 0.75rem;">
+              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
                 ${ts.issues.map(i => `
                   <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.8rem;">
                     <span style="color: ${sevColors[i.sev]}; flex-shrink: 0;">${sevIcons[i.sev]}</span>
                     <div>
-                      <span style="color: var(--color-text);">${i.msg}</span>
-                      <span style="color: var(--color-text-tertiary);"> — ${i.fix}</span>
-                      <span style="color: var(--color-accent); font-size: 0.7rem;"> +${i.impact}pt</span>
+                      <span style="color: var(--fg);">${i.msg}</span>
+                      <span style="color: var(--fg-4);"> — ${i.fix}</span>
+                      <span style="color: var(--accent); font-size: 0.7rem;"> +${i.impact}pt</span>
                     </div>
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="font-size: 0.85rem; color: var(--color-success);">No issues found.</p>'}
+            ` : '<p style="font-size: 0.85rem; color: var(--ok);">No issues found.</p>'}
           </div>
         `;
       }
