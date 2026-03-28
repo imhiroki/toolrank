@@ -1,0 +1,52 @@
+name: Daily Blog
+
+on:
+  schedule:
+    - cron: '0 23 * * 1-6'
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'Article type'
+        required: false
+        type: choice
+        options:
+          - auto
+          - new_servers
+          - category_spotlight
+          - teardown
+          - common_mistakes
+          - score_movers
+          - concept_deep_dive
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Generate article
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          TYPE="${{ github.event.inputs.type || 'auto' }}"
+          if [ "$TYPE" = "auto" ]; then
+            python packages/scanner/auto_blog.py
+          else
+            python packages/scanner/auto_blog.py --type "$TYPE"
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name "ToolRank Bot"
+          git config user.email "bot@toolrank.dev"
+          git add packages/web/src/content/blog/
+          git diff --cached --quiet && echo "No new article" && exit 0
+          git commit -m "Auto-generate daily blog post"
+          git push
