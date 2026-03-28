@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="ToolRank Badge"
+  description="Add a ToolRank Score badge to your MCP server README. Show agents and developers your tool quality at a glance."
+>
+  <section style="padding: 3rem 0 1.5rem;">
+    <div class="w" style="max-width: 680px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Badge</h1>
+      <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.7;">
+        Show your ToolRank Score in your README, Smithery listing, or npm package. A visible score signals quality to both agents and developers.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Available badges</h2>
+      
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--r);">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+            <img src="/badge/dominant.svg" alt="ToolRank Dominant badge" height="20" />
+            <span style="font-size: 0.8rem; color: var(--fg-3);">Score 85+ · Level 4</span>
+          </div>
+          <code style="font-size: 0.75rem; display: block; padding: 0.75rem; background: var(--bg-s); border-radius: 4px; overflow-x: auto; white-space: pre;">[![ToolRank](https://toolrank.dev/badge/dominant.svg)](https://toolrank.dev/ranking)</code>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--r);">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+            <img src="/badge/preferred.svg" alt="ToolRank Preferred badge" height="20" />
+            <span style="font-size: 0.8rem; color: var(--fg-3);">Score 70+ · Level 3</span>
+          </div>
+          <code style="font-size: 0.75rem; display: block; padding: 0.75rem; background: var(--bg-s); border-radius: 4px; overflow-x: auto; white-space: pre;">[![ToolRank](https://toolrank.dev/badge/preferred.svg)](https://toolrank.dev/ranking)</code>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--r);">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem;">
+            <img src="/badge/selectable.svg" alt="ToolRank Selectable badge" height="20" />
+            <span style="font-size: 0.8rem; color: var(--fg-3);">Score 50+ · Level 2</span>
+          </div>
+          <code style="font-size: 0.75rem; display: block; padding: 0.75rem; background: var(--bg-s); border-radius: 4px; overflow-x: auto; white-space: pre;">[![ToolRank](https://toolrank.dev/badge/selectable.svg)](https://toolrank.dev/ranking)</code>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">How to use</h2>
+      
+      <div style="font-size: 0.875rem; color: var(--fg-2); line-height: 1.8;">
+        <p style="margin-bottom: 1rem;"><strong style="color: var(--fg);">1. Score your tools</strong> at <a href="/score">toolrank.dev/score</a></p>
+        <p style="margin-bottom: 1rem;"><strong style="color: var(--fg);">2. Pick your badge</strong> based on your score level</p>
+        <p style="margin-bottom: 1rem;"><strong style="color: var(--fg);">3. Add to your README</strong> — copy the Markdown above and paste at the top of your repository README</p>
+        <p style="margin-bottom: 1rem;"><strong style="color: var(--fg);">4. Improve your score</strong> — follow the fix suggestions from the score tool. When you level up, update your badge.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 3rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Where to display</h2>
+      
+      <div style="font-size: 0.875rem; color: var(--fg-2); line-height: 1.8;">
+        <p style="margin-bottom: 0.75rem;">GitHub README (most impactful — visible to all visitors)</p>
+        <p style="margin-bottom: 0.75rem;">Smithery server description</p>
+        <p style="margin-bottom: 0.75rem;">npm package README</p>
+        <p style="margin-bottom: 0.75rem;">Documentation landing page</p>
+      </div>
+      
+      <p style="font-size: 0.75rem; color: var(--fg-4); margin-top: 1.5rem;">
+        Dynamic badges with real-time scores are coming in a future update.
+      </p>
+    </div>
+  </section>
+</Layout>
