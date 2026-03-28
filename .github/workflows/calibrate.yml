@@ -1,0 +1,26 @@
+name: Weekly Calibration
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'
+  workflow_dispatch:
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run calibration analysis
+        run: python packages/scanner/calibrate.py
+
+      - name: Upload calibration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: calibration-${{ github.run_number }}
+          path: packages/scanner/data/calibration_*.json
+          retention-days: 365
