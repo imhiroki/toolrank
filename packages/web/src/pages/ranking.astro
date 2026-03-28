@@ -1,0 +1,126 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLatestScores, getScoreDistribution } from '../lib/supabase';
+
+const scores = await getLatestScores(200);
+const dist = await getScoreDistribution();
+const hasData = scores.length > 0;
+const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+
+const levelColors: Record<string, string> = {
+  'Dominant': 'var(--color-accent)',
+  'Preferred': 'var(--color-success)',
+  'Selectable': 'var(--color-warning)',
+  'Visible': 'var(--color-text-tertiary)',
+  'Absent': 'var(--color-danger)',
+};
+---
+
+<Layout
+  title="MCP Server Quality Ranking"
+  description="Live ranking of MCP servers by ToolRank Score. See how AI agents evaluate tool quality across Findability, Clarity, Precision, and Efficiency. Updated daily."
+>
+  <section style="padding: 3rem 0 1.5rem;">
+    <div class="container" style="max-width: 960px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+        MCP server quality ranking
+      </h1>
+      <p style="color: var(--color-text-secondary); font-size: 0.9rem;">
+        {hasData
+          ? `${dist.total || scores.length} servers scored across the MCP ecosystem. Average ToolRank Score: ${dist.average || '—'}/100. Updated daily.`
+          : 'First ecosystem scan in progress. Data will appear here automatically.'}
+      </p>
+      {lastUpdated && (
+        <p style="color: var(--color-text-tertiary); font-size: 0.75rem; margin-top: 0.25rem;">
+          Last scan: {lastUpdated}
+        </p>
+      )}
+    </div>
+  </section>
+
+  {hasData && dist.total && (
+    <section style="padding: 1rem 0 2rem;">
+      <div class="container" style="max-width: 960px;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+          {[
+            { label: 'Dominant (85+)', count: dist.dominant, color: 'var(--color-accent)' },
+            { label: 'Preferred (70-84)', count: dist.preferred, color: 'var(--color-success)' },
+            { label: 'Selectable (50-69)', count: dist.selectable, color: 'var(--color-warning)' },
+            { label: 'Visible (25-49)', count: dist.visible, color: 'var(--color-text-tertiary)' },
+            { label: 'Absent (0-24)', count: dist.absent, color: 'var(--color-danger)' },
+          ].map(({ label, count, color }) => (
+            <div style="flex: 1; min-width: 120px; padding: 0.75rem; border-radius: var(--radius); background: var(--color-bg-alt); text-align: center;">
+              <p style={`font-size: 1.5rem; font-weight: 700; color: ${color};`}>{count || 0}</p>
+              <p style="font-size: 0.7rem; color: var(--color-text-tertiary);">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section style="padding: 0 0 4rem;">
+    <div class="container" style="max-width: 960px;">
+      {hasData ? (
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--color-border);">
+                <th style="text-align: left; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">#</th>
+                <th style="text-align: left; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">Server</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">Score</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">F</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">C</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">P</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">E</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">Tools</th>
+                <th style="text-align: center; padding: 0.6rem 0.5rem; color: var(--color-text-tertiary); font-weight: 500;">Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scores.map((s, i) => (
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                  <td style="padding: 0.5rem; color: var(--color-text-tertiary);">{i + 1}</td>
+                  <td style="padding: 0.5rem;">
+                    <span style="font-weight: 500;">{s.display_name || s.server_name}</span>
+                    {s.display_name && s.display_name !== s.server_name && (
+                      <span style="color: var(--color-text-tertiary); font-size: 0.7rem; margin-left: 0.5rem;">{s.server_name}</span>
+                    )}
+                  </td>
+                  <td style="text-align: center; padding: 0.5rem; font-weight: 600;">{Math.round(s.total_score)}</td>
+                  <td style="text-align: center; padding: 0.5rem; color: var(--color-text-secondary);">{Math.round(s.findability)}</td>
+                  <td style="text-align: center; padding: 0.5rem; color: var(--color-text-secondary);">{Math.round(s.clarity)}</td>
+                  <td style="text-align: center; padding: 0.5rem; color: var(--color-text-secondary);">{Math.round(s.precision)}</td>
+                  <td style="text-align: center; padding: 0.5rem; color: var(--color-text-secondary);">{Math.round(s.efficiency)}</td>
+                  <td style="text-align: center; padding: 0.5rem; color: var(--color-text-tertiary);">{s.tool_count}</td>
+                  <td style="text-align: center; padding: 0.5rem;">
+                    <span style={`font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 100px; background: var(--color-bg-alt); color: ${levelColors[s.level_name] || 'var(--color-text-tertiary)'};`}>
+                      {s.level_name}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div style="text-align: center; padding: 3rem; border: 1px dashed var(--color-border); border-radius: var(--radius);">
+          <p style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">Scanning in progress</p>
+          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">
+            ToolRank is scanning 4,000+ MCP servers across the ecosystem. Rankings will appear here automatically once the first full scan completes.
+          </p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section style="padding: 0 0 3rem;">
+    <div class="container" style="max-width: 960px; text-align: center;">
+      <p style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+        Scores are calculated using ToolRank's open-source Level A scoring engine.
+        <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py">View scoring logic</a>.
+        Rankings update daily via automated ecosystem scanning.
+      </p>
+    </div>
+  </section>
+</Layout>
