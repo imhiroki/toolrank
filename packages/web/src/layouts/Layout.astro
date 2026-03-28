@@ -173,7 +173,7 @@ const navLinks = [
     .mbtn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; background: none; border: none; cursor: pointer; color: var(--fg-3); border-radius: 6px; -webkit-tap-highlight-color: transparent; }
     .mbtn:hover { background: var(--bg-s); }
 
-    .mnav { display: none; position: fixed; inset: 3.25rem 0 0 0; background: var(--bg); z-index: 40; padding: 1rem 1.25rem; flex-direction: column; }
+    .mnav { display: none; position: fixed; inset: 3.25rem 0 0 0; background: var(--bg); z-index: 100; padding: 1rem 1.25rem; flex-direction: column; overflow-y: auto; }
     .mnav.open { display: flex; }
     .mnav a { color: var(--fg-2); font-size: 0.95rem; font-weight: 500; padding: 0.875rem 0; border-bottom: 1px solid var(--border); }
     .mnav a:last-child { border-bottom: none; }
