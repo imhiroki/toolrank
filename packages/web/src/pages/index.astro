@@ -5,30 +5,12 @@ const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
   mainEntity: [
-    {
-      '@type': 'Question',
-      name: 'What is ATO (Agent Tool Optimization)?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them. Unlike SEO (optimizing for search engines) or LLMO (optimizing for LLM citations), ATO focuses on being chosen and used by autonomous AI agents.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'What is ToolRank Score?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability, Clarity, Precision, and Efficiency.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'How is ATO different from SEO and LLMO?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'SEO optimizes for search engines (human searches). LLMO optimizes for LLM citations (human asks AI). ATO optimizes for agent tool selection (no human in the loop). ATO results in your API being called and transactions occurring.',
-      },
-    },
+    { '@type': 'Question', name: 'What is ATO (Agent Tool Optimization)?',
+      acceptedAnswer: { '@type': 'Answer', text: 'ATO is the practice of optimizing your tools so AI agents can discover, select, and execute them autonomously.' }},
+    { '@type': 'Question', name: 'What is ToolRank Score?',
+      acceptedAnswer: { '@type': 'Answer', text: 'ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools.' }},
+    { '@type': 'Question', name: 'How is ATO different from LLMO?',
+      acceptedAnswer: { '@type': 'Answer', text: 'LLMO optimizes for mentions. ATO optimizes for executions. The difference is between advertising and transactions.' }},
   ],
 };
 ---
@@ -39,204 +21,141 @@ const faqSchema = {
 >
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
-  <!-- Hero -->
   <section class="hero">
-    <div class="w hero-inner">
-      <p class="hero-tag">Agent Tool Optimization</p>
-      <h1 class="hero-h1">Are AI agents choosing your tools?</h1>
-      <p class="hero-sub">
-        97% of MCP tool descriptions have quality defects. 
+    <div class="w hero-in">
+      <span class="tag">Agent Tool Optimization</span>
+      <h1>Are AI agents choosing<br />your tools?</h1>
+      <p class="hero-p">
+        97% of MCP tool descriptions have quality defects.
         Optimized tools get selected <strong>3.6x more</strong>.
         ToolRank scores and fixes your tool definitions so agents pick you first.
       </p>
       <div class="hero-cta">
-        <a href="/score" class="btn-primary">Score your tools — free</a>
-        <a href="/framework" class="btn-ghost">Learn ATO framework</a>
+        <a href="/score" class="btn btn-primary">Score your tools — free</a>
+        <a href="/framework" class="btn btn-ghost">Learn ATO framework</a>
       </div>
     </div>
   </section>
 
-  <!-- SEO → LLMO → ATO -->
   <section class="sec">
     <div class="w">
-      <h2 class="sec-h2">SEO got you found. LLMO got you cited. ATO gets you <em>used</em>.</h2>
+      <h2 class="sec-title">SEO got you found. LLMO got you cited.<br />ATO gets you <em>used</em>.</h2>
       <div class="grid-3 stage-grid">
-        <div class="stage-card">
-          <span class="stage-label">Stage 0</span>
+        <div class="card">
+          <span class="card-tag">Stage 0</span>
           <h3>SEO</h3>
           <p>Human searches Google. Your page appears.</p>
-          <span class="stage-result">Result: a click</span>
+          <span class="card-foot">Result: a click</span>
         </div>
-        <div class="stage-card">
-          <span class="stage-label">Stage 1</span>
+        <div class="card">
+          <span class="card-tag">Stage 1</span>
           <h3>LLMO</h3>
           <p>Human asks AI. Your brand is mentioned.</p>
-          <span class="stage-result">Result: a mention</span>
+          <span class="card-foot">Result: a mention</span>
         </div>
-        <div class="stage-card stage-card--active">
-          <span class="stage-label" style="color: var(--accent);">Stage 2+3</span>
+        <div class="card card--accent">
+          <span class="card-tag" style="color:var(--accent)">Stage 2+3</span>
           <h3>ATO</h3>
           <p>Agent autonomously acts. Your API is called.</p>
-          <span class="stage-result" style="color: var(--accent); font-weight: 500;">Result: a transaction</span>
+          <span class="card-foot" style="color:var(--accent);font-weight:600">Result: a transaction</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- 4 Dimensions -->
-  <section class="sec">
+  <section class="sec sec--alt">
     <div class="w">
-      <h2 class="sec-h2">Four dimensions of agent-readiness</h2>
-      <p class="sec-sub">ToolRank Score measures each dimension separately so you know exactly what to fix.</p>
+      <h2 class="sec-title">Four dimensions of agent-readiness</h2>
+      <p class="sec-sub">ToolRank Score measures each dimension so you know exactly what to fix.</p>
       <div class="grid-2 dim-grid">
-        <div class="dim-card">
-          <span class="dim-label">Findability · 25%</span>
-          <p>Can agents discover you? Registry presence, tags, llms.txt.</p>
-        </div>
-        <div class="dim-card">
-          <span class="dim-label">Clarity · 35%</span>
-          <p>Can agents understand you? Description quality, purpose, usage context.</p>
-        </div>
-        <div class="dim-card">
-          <span class="dim-label">Precision · 25%</span>
-          <p>Is your interface precise? Schema types, enums, error handling.</p>
-        </div>
-        <div class="dim-card">
-          <span class="dim-label">Efficiency · 15%</span>
-          <p>Are you token-efficient? Context cost, tool count, modularity.</p>
-        </div>
+        <div class="dim"><span class="dim-label">Findability · 25%</span><p>Can agents discover you? Registry presence, tags, llms.txt.</p></div>
+        <div class="dim"><span class="dim-label">Clarity · 35%</span><p>Can agents understand you? Description quality, purpose, context.</p></div>
+        <div class="dim"><span class="dim-label">Precision · 25%</span><p>Is your interface precise? Schema types, enums, error handling.</p></div>
+        <div class="dim"><span class="dim-label">Efficiency · 15%</span><p>Are you token-efficient? Context cost, tool count, modularity.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- Numbers -->
   <section class="sec">
     <div class="w">
-      <div class="grid-3 stat-grid">
-        <div class="stat">
-          <span class="stat-num">97.1%</span>
-          <span class="stat-label">of MCP tools have description defects</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num">3.6x</span>
-          <span class="stat-label">selection advantage with optimization</span>
-        </div>
-        <div class="stat">
-          <span class="stat-num">10,000+</span>
-          <span class="stat-label">MCP servers competing for selection</span>
-        </div>
+      <div class="grid-3 stats">
+        <div class="stat"><span class="stat-n">97.1%</span><span class="stat-l">of MCP tools have defects</span></div>
+        <div class="stat"><span class="stat-n">3.6x</span><span class="stat-l">selection advantage</span></div>
+        <div class="stat"><span class="stat-n">10,000+</span><span class="stat-l">MCP servers competing</span></div>
       </div>
-      <p class="stat-src">Sources: arXiv 2602.14878, arXiv 2602.18914, Anthropic MCP ecosystem data</p>
+      <p class="stat-src">Sources: arXiv 2602.14878, arXiv 2602.18914</p>
     </div>
   </section>
 
-  <!-- CTA -->
   <section class="sec cta-sec">
-    <div class="w cta-inner">
-      <h2 class="cta-h2">Check your score in 10 seconds</h2>
-      <p class="cta-sub">Paste your MCP tool definition or server URL. Get your ToolRank Score with specific fixes.</p>
-      <a href="/score" class="btn-primary">Score your tools — free</a>
+    <div class="w cta-box">
+      <h2>Check your score in 10 seconds</h2>
+      <p>Paste your MCP tool definition. Get your ToolRank Score with specific fixes.</p>
+      <a href="/score" class="btn btn-primary">Score your tools — free</a>
     </div>
   </section>
 
-  <!-- FAQ -->
   <section class="sec faq-sec">
-    <div class="w faq-inner">
-      <h2 class="faq-h2">Frequently asked questions</h2>
-      <details class="faq-item">
-        <summary>What is ATO (Agent Tool Optimization)?</summary>
-        <p>ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them autonomously. Unlike SEO (for search engines) or LLMO (for LLM citations), ATO focuses on the complete agent selection pipeline. LLMO covers only Stage 1. ATO is the complete picture.</p>
-      </details>
-      <details class="faq-item">
-        <summary>How is ATO different from LLMO?</summary>
-        <p>LLMO optimizes for mentions — getting your brand cited in AI responses. ATO optimizes for execution — getting your API actually called by agents. The difference is between advertising and transactions.</p>
-      </details>
-      <details class="faq-item">
-        <summary>What is ToolRank Score?</summary>
-        <p>ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability, Clarity, Precision, and Efficiency. Research shows optimized tools achieve 72% selection probability versus a 20% baseline.</p>
-      </details>
-      <details class="faq-item">
-        <summary>Is ToolRank free?</summary>
-        <p>Yes. The ToolRank Score diagnosis is free. The ATO framework and scoring logic are open source. Pro features are available via paid plans.</p>
-      </details>
+    <div class="w faq-in">
+      <h2 class="faq-title">Frequently asked questions</h2>
+      <details class="faq"><summary>What is ATO (Agent Tool Optimization)?</summary><p>ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them autonomously. LLMO covers only Stage 1. ATO is the complete picture.</p></details>
+      <details class="faq"><summary>How is ATO different from LLMO?</summary><p>LLMO optimizes for mentions. ATO optimizes for execution — getting your API actually called by agents. The difference is between advertising and transactions.</p></details>
+      <details class="faq"><summary>What is ToolRank Score?</summary><p>A 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. Four dimensions: Findability, Clarity, Precision, Efficiency. Optimized tools achieve 72% selection probability versus 20% baseline.</p></details>
+      <details class="faq"><summary>Is ToolRank free?</summary><p>Yes. Score diagnosis is free. The ATO framework and scoring logic are open source.</p></details>
     </div>
   </section>
 
   <style>
-    /* Hero */
-    .hero { padding: 3rem 0 2rem; text-align: center; }
-    .hero-inner { max-width: 640px; margin: 0 auto; }
-    .hero-tag { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 0.75rem; }
-    .hero-h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; margin-bottom: 1rem; }
-    .hero-sub { font-size: 0.95rem; color: var(--fg-2); line-height: 1.7; margin-bottom: 1.75rem; }
-    .hero-sub strong { color: var(--fg); }
-    .hero-cta { display: flex; flex-direction: column; gap: 0.625rem; align-items: center; }
-
+    .hero { padding: 4rem 0 3rem; text-align: center; }
+    .hero-in { max-width: 640px; margin: 0 auto; }
+    .tag { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent); margin-bottom: 1rem; }
+    .hero h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; margin-bottom: 1.25rem; }
+    .hero-p { font-size: 1rem; color: var(--fg-2); line-height: 1.75; margin-bottom: 2rem; }
+    .hero-p strong { color: var(--fg); }
+    .hero-cta { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; }
     @media (min-width: 640px) {
-      .hero { padding: 5rem 0 3rem; }
-      .hero-h1 { font-size: 2.75rem; }
-      .hero-sub { font-size: 1.05rem; }
+      .hero { padding: 6rem 0 4rem; }
+      .hero h1 { font-size: 3rem; }
+      .hero-p { font-size: 1.1rem; }
       .hero-cta { flex-direction: row; justify-content: center; }
     }
 
-    /* Buttons */
-    .btn-primary {
-      display: inline-flex; align-items: center; padding: 0.7rem 1.4rem;
-      background: var(--accent); color: #fff; border-radius: var(--r);
-      font-weight: 600; font-size: 0.85rem; text-decoration: none;
-      transition: opacity 0.15s;
-    }
-    .btn-primary:hover { opacity: 0.9; }
-    .btn-ghost {
-      display: inline-flex; align-items: center; padding: 0.7rem 1.4rem;
-      border: 1px solid var(--border); border-radius: var(--r);
-      font-weight: 500; font-size: 0.85rem; color: var(--fg);
-      text-decoration: none; transition: border-color 0.15s;
-    }
-    .btn-ghost:hover { border-color: var(--fg-4); opacity: 1; }
+    .sec { padding: 3rem 0; }
+    .sec--alt { background: var(--bg-s); }
+    @media (min-width: 640px) { .sec { padding: 4rem 0; } }
+    .sec-title { text-align: center; font-size: 1.35rem; font-weight: 700; margin-bottom: 1.5rem; line-height: 1.35; }
+    @media (min-width: 640px) { .sec-title { font-size: 1.6rem; } }
+    .sec-sub { text-align: center; color: var(--fg-3); font-size: 0.9rem; margin-top: -0.75rem; margin-bottom: 2rem; }
 
-    /* Sections */
-    .sec { padding: 2.5rem 0; }
-    @media (min-width: 640px) { .sec { padding: 3rem 0; } }
-    .sec-h2 { text-align: center; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.35; }
-    @media (min-width: 640px) { .sec-h2 { font-size: 1.5rem; } }
-    .sec-sub { text-align: center; color: var(--fg-2); font-size: 0.875rem; margin-top: -1rem; margin-bottom: 1.5rem; }
+    .card { padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg); }
+    .card--accent { border: 2px solid var(--accent); background: var(--accent-s); }
+    .card-tag { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-4); font-weight: 600; }
+    .card h3 { font-size: 1.1rem; font-weight: 700; margin: 0.3rem 0 0.5rem; }
+    .card p { font-size: 0.875rem; color: var(--fg-2); line-height: 1.5; }
+    .card-foot { display: block; font-size: 0.7rem; color: var(--fg-4); margin-top: 0.75rem; }
 
-    /* Stage cards */
-    .stage-grid { max-width: 780px; margin: 0 auto; }
-    .stage-card { padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--r); }
-    .stage-card--active { border: 2px solid var(--accent); background: var(--accent-s); }
-    .stage-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-4); }
-    .stage-card h3 { font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0.4rem; }
-    .stage-card p { font-size: 0.825rem; color: var(--fg-2); line-height: 1.5; }
-    .stage-result { display: block; font-size: 0.7rem; color: var(--fg-4); margin-top: 0.6rem; }
-
-    /* Dimension cards */
     .dim-grid { max-width: 640px; margin: 0 auto; }
-    .dim-card { padding: 1rem 1.25rem; border-radius: var(--r); background: var(--bg-s); }
-    .dim-label { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
-    .dim-card p { font-size: 0.825rem; color: var(--fg-2); margin-top: 0.2rem; line-height: 1.5; }
+    .dim { padding: 1.25rem; border-radius: var(--r); background: var(--bg); border: 1px solid var(--border); }
+    .dim-label { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+    .dim p { font-size: 0.85rem; color: var(--fg-2); margin-top: 0.25rem; line-height: 1.5; }
 
-    /* Stats */
-    .stat-grid { max-width: 640px; margin: 0 auto; text-align: center; }
-    .stat { padding: 0.75rem 0; }
-    .stat-num { display: block; font-size: 1.75rem; font-weight: 700; color: var(--accent); }
-    .stat-label { font-size: 0.75rem; color: var(--fg-4); }
+    .stats { max-width: 640px; margin: 0 auto; text-align: center; }
+    .stat { padding: 1rem 0; }
+    .stat-n { display: block; font-size: 2rem; font-weight: 700; color: var(--accent); }
+    .stat-l { font-size: 0.8rem; color: var(--fg-4); }
     .stat-src { text-align: center; font-size: 0.65rem; color: var(--fg-4); margin-top: 1rem; }
 
-    /* CTA */
-    .cta-sec { padding: 2rem 0 3rem; text-align: center; }
-    .cta-inner { max-width: 520px; margin: 0 auto; }
-    .cta-h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .cta-sub { color: var(--fg-2); font-size: 0.85rem; margin-bottom: 1.25rem; }
+    .cta-sec { text-align: center; }
+    .cta-box { max-width: 520px; margin: 0 auto; padding: 3rem 2rem; background: var(--bg-s); border-radius: 12px; }
+    .cta-box h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .cta-box p { color: var(--fg-2); font-size: 0.9rem; margin-bottom: 1.5rem; }
 
-    /* FAQ */
-    .faq-sec { border-top: 1px solid var(--border); padding-top: 2.5rem; }
-    .faq-inner { max-width: 640px; margin: 0 auto; }
-    .faq-h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1.25rem; text-align: left; }
-    .faq-item { border-bottom: 1px solid var(--border); padding: 0.875rem 0; }
-    .faq-item summary { cursor: pointer; font-weight: 500; font-size: 0.875rem; list-style: none; }
-    .faq-item summary::-webkit-details-marker { display: none; }
-    .faq-item p { margin-top: 0.6rem; font-size: 0.825rem; color: var(--fg-2); line-height: 1.7; }
+    .faq-sec { border-top: 1px solid var(--border); }
+    .faq-in { max-width: 640px; margin: 0 auto; }
+    .faq-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; text-align: left; }
+    .faq { border-bottom: 1px solid var(--border); padding: 1rem 0; }
+    .faq summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; list-style: none; color: var(--fg); }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq p { margin-top: 0.75rem; font-size: 0.85rem; color: var(--fg-2); line-height: 1.75; }
   </style>
 </Layout>

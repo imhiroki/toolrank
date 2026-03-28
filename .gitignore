@@ -1,0 +1,6 @@
+node_modules/
+__pycache__/
+dist/
+.astro/
+packages/scanner/data/
+*.pyc

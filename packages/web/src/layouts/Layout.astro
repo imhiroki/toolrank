@@ -35,7 +35,7 @@ const siteSchema = {
   '@type': 'WebSite',
   name: 'ToolRank',
   url: 'https://toolrank.dev',
-  description: 'The first ATO (Agent Tool Optimization) platform. Measure and improve how AI agents discover, select, and use your tools.',
+  description: 'The first ATO (Agent Tool Optimization) platform.',
   potentialAction: {
     '@type': 'SearchAction',
     target: 'https://toolrank.dev/score?q={search_term_string}',
@@ -49,14 +49,9 @@ const appSchema = {
   name: 'ToolRank',
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Web',
-  description: 'Score and optimize MCP tool definitions for AI agent discovery. Free ToolRank Score diagnosis.',
+  description: 'Score and optimize MCP tool definitions for AI agent discovery.',
   url: 'https://toolrank.dev',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-    description: 'Free tier: 5 score diagnoses per month',
-  },
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
 
 const navLinks = [
@@ -85,12 +80,10 @@ const navLinks = [
   <meta property="og:description" content={description} />
   <meta property="og:image" content={new URL(ogImage, Astro.site)} />
   <meta property="og:site_name" content="ToolRank" />
-
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={fullTitle} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
-
   {publishedDate && <meta property="article:published_time" content={publishedDate} />}
 
   <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
@@ -105,16 +98,17 @@ const navLinks = [
 
   <style is:global>
     :root {
-      --bg: #fafaf9;
-      --bg-s: #f5f5f4;
-      --bg-m: #e7e5e4;
-      --fg: #1c1917;
-      --fg-2: #44403c;
-      --fg-3: #78716c;
-      --fg-4: #a8a29e;
+      --bg: #ffffff;
+      --bg-s: #f8f8f8;
+      --bg-m: #f0f0f0;
+      --fg: #111111;
+      --fg-2: #444444;
+      --fg-3: #777777;
+      --fg-4: #aaaaaa;
       --accent: #6d28d9;
-      --accent-s: rgba(109, 40, 217, 0.07);
-      --border: #e7e5e4;
+      --accent-hover: #5b21b6;
+      --accent-s: rgba(109, 40, 217, 0.06);
+      --border: #e5e5e5;
       --ok: #059669;
       --warn: #d97706;
       --err: #dc2626;
@@ -125,16 +119,17 @@ const navLinks = [
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0c0a09;
-        --bg-s: #1c1917;
-        --bg-m: #292524;
-        --fg: #fafaf9;
-        --fg-2: #d6d3d1;
-        --fg-3: #a8a29e;
-        --fg-4: #78716c;
+        --bg: #111111;
+        --bg-s: #1a1a1a;
+        --bg-m: #252525;
+        --fg: #f5f5f5;
+        --fg-2: #cccccc;
+        --fg-3: #999999;
+        --fg-4: #666666;
         --accent: #a78bfa;
-        --accent-s: rgba(167, 139, 250, 0.1);
-        --border: #292524;
+        --accent-hover: #b39dfa;
+        --accent-s: rgba(167, 139, 250, 0.08);
+        --border: #2a2a2a;
       }
     }
 
@@ -142,52 +137,77 @@ const navLinks = [
     html { font-family: var(--sans); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100dvh; line-height: 1.6; display: flex; flex-direction: column; }
     a { color: var(--accent); text-decoration: none; }
-    a:hover { opacity: 0.85; }
+    a:hover { color: var(--accent-hover); }
     code { font-family: var(--mono); font-size: 0.85em; background: var(--bg-s); padding: 0.15em 0.4em; border-radius: 4px; }
 
-    /* Container */
     .w { width: 100%; max-width: var(--w); margin: 0 auto; padding-inline: 1.25rem; }
     @media (min-width: 640px) { .w { padding-inline: 2rem; } }
 
-    /* Header */
+    /* ── HEADER ── */
     .hdr {
       position: sticky; top: 0; z-index: 50;
-      background: color-mix(in srgb, var(--bg) 80%, transparent);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      background: var(--bg);
       border-bottom: 1px solid var(--border);
     }
-    .hdr-in { display: flex; align-items: center; justify-content: space-between; height: 3.25rem; }
+    .hdr-in { display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
 
-    .logo { display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.95rem; color: var(--fg); letter-spacing: -0.02em; }
-    .logo:hover { opacity: 1; }
+    .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; color: var(--fg); letter-spacing: -0.02em; }
+    .logo:hover { color: var(--fg); opacity: 0.8; }
 
-    .dnav { display: none; gap: 0.125rem; align-items: center; }
-    .dnav a { color: var(--fg-3); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.6rem; border-radius: 6px; transition: color 0.15s, background 0.15s; }
-    .dnav a:hover { color: var(--fg); background: var(--bg-s); opacity: 1; }
-    .dnav .gh { margin-left: 0.25rem; padding: 0.3rem; display: flex; }
-    .dnav .gh svg { width: 17px; height: 17px; fill: var(--fg-4); transition: fill 0.15s; display: block; }
+    .dnav { display: none; gap: 0.5rem; align-items: center; }
+    .dnav a {
+      color: var(--fg-3); font-size: 0.85rem; font-weight: 500;
+      padding: 0.35rem 0.65rem; border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .dnav a:hover { color: var(--fg); background: var(--bg-s); }
+    .dnav .gh { margin-left: 0.25rem; padding: 0.35rem; display: flex; }
+    .dnav .gh svg { width: 18px; height: 18px; fill: var(--fg-4); transition: fill 0.15s; display: block; }
     .dnav .gh:hover svg { fill: var(--fg); }
 
-    @media (min-width: 640px) { .dnav { display: flex; } .mbtn { display: none; } .mnav { display: none !important; } }
+    @media (min-width: 640px) {
+      .dnav { display: flex; }
+      .mbtn { display: none; }
+    }
 
-    .mbtn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; background: none; border: none; cursor: pointer; color: var(--fg-3); border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+    .mbtn {
+      display: flex; align-items: center; justify-content: center;
+      width: 2.25rem; height: 2.25rem; background: none; border: none;
+      cursor: pointer; color: var(--fg-3); border-radius: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
     .mbtn:hover { background: var(--bg-s); }
 
-    .mnav { display: none; position: fixed; inset: 3.25rem 0 0 0; background: var(--bg); z-index: 100; padding: 1rem 1.25rem; flex-direction: column; overflow-y: auto; }
+    /* ── MOBILE NAV — outside header, no backdrop-filter conflict ── */
+    .mnav {
+      display: none; position: fixed; inset: 3.5rem 0 0 0;
+      background: var(--bg); z-index: 100;
+      padding: 0.5rem 1.25rem; flex-direction: column;
+      border-top: 1px solid var(--border); overflow-y: auto;
+    }
     .mnav.open { display: flex; }
-    .mnav a { color: var(--fg-2); font-size: 0.95rem; font-weight: 500; padding: 0.875rem 0; border-bottom: 1px solid var(--border); }
+    .mnav a {
+      color: var(--fg-2); font-size: 1rem; font-weight: 500;
+      padding: 1rem 0; border-bottom: 1px solid var(--border);
+    }
     .mnav a:last-child { border-bottom: none; }
-    .mnav a:hover { color: var(--accent); opacity: 1; }
+    .mnav a:hover { color: var(--accent); }
 
-    /* Footer */
-    .ftr { margin-top: auto; border-top: 1px solid var(--border); padding: 1.5rem 0; }
-    .ftr-in { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.7rem; color: var(--fg-4); }
+    @media (min-width: 640px) {
+      .mnav { display: none !important; }
+    }
+
+    /* ── FOOTER ── */
+    .ftr { margin-top: auto; border-top: 1px solid var(--border); padding: 2rem 0; }
+    .ftr-in { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem; color: var(--fg-4); }
     .ftr-lk { display: flex; gap: 1rem; }
     .ftr-lk a { color: var(--fg-4); }
     .ftr-lk a:hover { color: var(--fg-3); }
-    @media (min-width: 640px) { .ftr-in { flex-direction: row; justify-content: space-between; align-items: center; } }
+    @media (min-width: 640px) {
+      .ftr-in { flex-direction: row; justify-content: space-between; align-items: center; }
+    }
 
-    /* Utility: responsive grid helper used across pages */
+    /* ── UTILITY GRIDS ── */
     .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
     @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } }
     .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -197,13 +217,25 @@ const navLinks = [
     .grid-5 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     @media (min-width: 480px) { .grid-5 { grid-template-columns: repeat(3, 1fr); } }
     @media (min-width: 640px) { .grid-5 { grid-template-columns: repeat(5, 1fr); } }
+
+    /* ── BUTTONS (shared across pages) ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0.75rem 1.75rem; border-radius: var(--r);
+      font-weight: 600; font-size: 0.9rem; text-decoration: none;
+      transition: background 0.15s, opacity 0.15s; cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--fg-4); color: var(--fg); }
   </style>
 </head>
 <body>
   <header class="hdr">
     <nav class="w hdr-in">
       <a href="/" class="logo">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="4" fill="var(--accent)"/><path d="M7 12L10.5 15.5L17 8.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="4" fill="var(--accent)"/><path d="M7 12L10.5 15.5L17 8.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         ToolRank
       </a>
       <div class="dnav">
@@ -213,14 +245,16 @@ const navLinks = [
         </a>
       </div>
       <button class="mbtn" onclick="document.querySelector('.mnav').classList.toggle('open')" aria-label="Menu">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="6" x2="19" y2="6"/><line x1="3" y1="11" x2="19" y2="11"/><line x1="3" y1="16" x2="19" y2="16"/></svg>
       </button>
     </nav>
-    <div class="mnav">
-      {navLinks.map(l => <a href={l.href} onclick="document.querySelector('.mnav').classList.remove('open')">{l.label}</a>)}
-      <a href="https://github.com/imhiroki/toolrank" target="_blank" rel="noopener" onclick="document.querySelector('.mnav').classList.remove('open')">GitHub</a>
-    </div>
   </header>
+
+  <!-- Mobile nav OUTSIDE header to avoid backdrop-filter stacking context -->
+  <div class="mnav">
+    {navLinks.map(l => <a href={l.href} onclick="document.querySelector('.mnav').classList.remove('open')">{l.label}</a>)}
+    <a href="https://github.com/imhiroki/toolrank" target="_blank" rel="noopener" onclick="document.querySelector('.mnav').classList.remove('open')">GitHub</a>
+  </div>
 
   <main><slot /></main>
 
