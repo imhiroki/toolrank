@@ -9,6 +9,7 @@ const posts = (await getCollection('blog'))
 
 <Layout
   title="Blog"
+  breadcrumbs={[{ label: "Blog", href: "/blog" }]}
   description="ATO insights, MCP ecosystem analysis, and agent tool optimization strategies. Data-driven articles updated daily."
 >
   <section style="padding: 3rem 0 1.5rem;">

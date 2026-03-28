@@ -4,6 +4,7 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout
   title="Score Your Tools"
+  breadcrumbs={[{ label: "Score", href: "/score" }]}
   description="Get your free ToolRank Score. Enter your MCP server name or paste JSON. See how AI agents evaluate your tools across Findability, Clarity, Precision, and Efficiency."
 >
   <section style="padding: 3rem 0 1rem;">
@@ -294,6 +295,12 @@ import Layout from '../layouts/Layout.astro';
 
       h += `
         <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;">
+          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Share your score</p>
+          <div class="share-bar" style="margin-bottom: 1rem;">
+            <a class="share-btn" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`My MCP tools scored ${Math.round(avg)}/100 on ToolRank`)}&url=https://toolrank.dev/score" target="_blank" rel="noopener">𝕏 Share</a>
+            <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https://toolrank.dev/score" target="_blank" rel="noopener">LinkedIn</a>
+            <button class="share-btn" onclick="navigator.clipboard.writeText('My MCP tools scored ${Math.round(avg)}/100 on ToolRank https://toolrank.dev/score');this.textContent='Copied!'">Copy</button>
+          </div>
           <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Next steps</p>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             ${avg >= 85 ? `<a href="/badge" style="font-size: 0.8rem;">Add a ToolRank badge to your README →</a>` : ''}

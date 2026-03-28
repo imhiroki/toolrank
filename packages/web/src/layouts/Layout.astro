@@ -6,6 +6,7 @@ interface Props {
   type?: 'website' | 'article';
   publishedDate?: string;
   noindex?: boolean;
+  breadcrumbs?: Array<{ label: string; href: string }>;
 }
 
 const {
@@ -15,10 +16,13 @@ const {
   type = 'website',
   publishedDate,
   noindex = false,
+  breadcrumbs,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title === 'ToolRank' ? title : `${title} | ToolRank`;
+const shareText = encodeURIComponent(`${title} — ${description}`);
+const shareUrl = encodeURIComponent(canonicalURL.toString());
 
 const orgSchema = {
   '@context': 'https://schema.org',
@@ -54,6 +58,20 @@ const appSchema = {
   offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 };
 
+const breadcrumbSchema = breadcrumbs ? {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'ToolRank', item: 'https://toolrank.dev' },
+    ...breadcrumbs.map((b, i) => ({
+      '@type': 'ListItem',
+      position: i + 2,
+      name: b.label,
+      item: `https://toolrank.dev${b.href}`,
+    })),
+  ],
+} : null;
+
 const navLinks = [
   { href: '/score', label: 'Score' },
   { href: '/framework', label: 'Framework' },
@@ -87,10 +105,17 @@ const navLinks = [
   <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
   {publishedDate && <meta property="article:published_time" content={publishedDate} />}
 
+  <!-- LLMO: Help AI systems understand this page -->
+  <meta name="ai-content-declaration" content="original" />
+  <link rel="llms-txt" href="/llms.txt" />
+
   <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
   {Astro.url.pathname === '/' && (
     <script type="application/ld+json" set:html={JSON.stringify(appSchema)} />
+  )}
+  {breadcrumbSchema && (
+    <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
   )}
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -120,17 +145,10 @@ const navLinks = [
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #111111;
-        --bg-s: #1a1a1a;
-        --bg-m: #252525;
-        --fg: #f5f5f5;
-        --fg-2: #cccccc;
-        --fg-3: #999999;
-        --fg-4: #666666;
-        --accent: #a78bfa;
-        --accent-hover: #b39dfa;
-        --accent-s: rgba(167, 139, 250, 0.08);
-        --border: #2a2a2a;
+        --bg: #111111; --bg-s: #1a1a1a; --bg-m: #252525;
+        --fg: #f5f5f5; --fg-2: #cccccc; --fg-3: #999999; --fg-4: #666666;
+        --accent: #a78bfa; --accent-hover: #b39dfa;
+        --accent-s: rgba(167, 139, 250, 0.08); --border: #2a2a2a;
       }
     }
 
@@ -144,71 +162,55 @@ const navLinks = [
     .w { width: 100%; max-width: var(--w); margin: 0 auto; padding-inline: 1.25rem; }
     @media (min-width: 640px) { .w { padding-inline: 2rem; } }
 
-    /* ── HEADER ── */
-    .hdr {
-      position: sticky; top: 0; z-index: 50;
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-    }
+    .hdr { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); }
     .hdr-in { display: flex; align-items: center; justify-content: space-between; height: 3.5rem; }
-
     .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem; color: var(--fg); letter-spacing: -0.02em; }
     .logo:hover { color: var(--fg); opacity: 0.8; }
-
     .dnav { display: none; gap: 0.5rem; align-items: center; }
-    .dnav a {
-      color: var(--fg-3); font-size: 0.85rem; font-weight: 500;
-      padding: 0.35rem 0.65rem; border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
-    }
+    .dnav a { color: var(--fg-3); font-size: 0.85rem; font-weight: 500; padding: 0.35rem 0.65rem; border-radius: 6px; transition: color 0.15s, background 0.15s; }
     .dnav a:hover { color: var(--fg); background: var(--bg-s); }
     .dnav .gh { margin-left: 0.25rem; padding: 0.35rem; display: flex; }
     .dnav .gh svg { width: 18px; height: 18px; fill: var(--fg-4); transition: fill 0.15s; display: block; }
     .dnav .gh:hover svg { fill: var(--fg); }
-
-    @media (min-width: 640px) {
-      .dnav { display: flex; }
-      .mbtn { display: none; }
-    }
-
-    .mbtn {
-      display: flex; align-items: center; justify-content: center;
-      width: 2.25rem; height: 2.25rem; background: none; border: none;
-      cursor: pointer; color: var(--fg-3); border-radius: 6px;
-      -webkit-tap-highlight-color: transparent;
-    }
+    @media (min-width: 640px) { .dnav { display: flex; } .mbtn { display: none; } }
+    .mbtn { display: flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; background: none; border: none; cursor: pointer; color: var(--fg-3); border-radius: 6px; -webkit-tap-highlight-color: transparent; }
     .mbtn:hover { background: var(--bg-s); }
-
-    /* ── MOBILE NAV — outside header, no backdrop-filter conflict ── */
-    .mnav {
-      display: none; position: fixed; inset: 3.5rem 0 0 0;
-      background: var(--bg); z-index: 100;
-      padding: 0.5rem 1.25rem; flex-direction: column;
-      border-top: 1px solid var(--border); overflow-y: auto;
-    }
+    .mnav { display: none; position: fixed; inset: 3.5rem 0 0 0; background: var(--bg); z-index: 100; padding: 0.5rem 1.25rem; flex-direction: column; border-top: 1px solid var(--border); overflow-y: auto; }
     .mnav.open { display: flex; }
-    .mnav a {
-      color: var(--fg-2); font-size: 1rem; font-weight: 500;
-      padding: 1rem 0; border-bottom: 1px solid var(--border);
-    }
+    .mnav a { color: var(--fg-2); font-size: 1rem; font-weight: 500; padding: 1rem 0; border-bottom: 1px solid var(--border); }
     .mnav a:last-child { border-bottom: none; }
     .mnav a:hover { color: var(--accent); }
+    @media (min-width: 640px) { .mnav { display: none !important; } }
 
-    @media (min-width: 640px) {
-      .mnav { display: none !important; }
-    }
+    /* Breadcrumbs */
+    .crumbs { padding: 0.75rem 0 0; font-size: 0.7rem; color: var(--fg-4); }
+    .crumbs a { color: var(--fg-4); }
+    .crumbs a:hover { color: var(--fg-3); }
+    .crumbs span { margin: 0 0.3rem; }
 
-    /* ── FOOTER ── */
+    /* Share bar */
+    .share-bar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .share-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.65rem; font-size: 0.7rem; font-weight: 500; border: 1px solid var(--border); border-radius: 100px; color: var(--fg-3); background: var(--bg); text-decoration: none; transition: border-color 0.15s, color 0.15s; }
+    .share-btn:hover { border-color: var(--fg-4); color: var(--fg-2); }
+
     .ftr { margin-top: auto; border-top: 1px solid var(--border); padding: 2rem 0; }
-    .ftr-in { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.75rem; color: var(--fg-4); }
-    .ftr-lk { display: flex; gap: 1rem; }
+    .ftr-in { display: flex; flex-direction: column; gap: 1.5rem; font-size: 0.75rem; color: var(--fg-4); }
+    .ftr-lk { display: flex; gap: 1rem; flex-wrap: wrap; }
     .ftr-lk a { color: var(--fg-4); }
     .ftr-lk a:hover { color: var(--fg-3); }
-    @media (min-width: 640px) {
-      .ftr-in { flex-direction: row; justify-content: space-between; align-items: center; }
-    }
+    .ftr-nav { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .ftr-nav-col { display: flex; flex-direction: column; gap: 0.4rem; }
+    .ftr-nav-col strong { color: var(--fg-3); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.2rem; }
+    .ftr-nav-col a { color: var(--fg-4); font-size: 0.75rem; }
+    .ftr-nav-col a:hover { color: var(--fg-3); }
+    @media (min-width: 640px) { .ftr-in { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
 
-    /* ── UTILITY GRIDS ── */
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.75rem; border-radius: var(--r); font-weight: 600; font-size: 0.9rem; text-decoration: none; transition: background 0.15s, opacity 0.15s; cursor: pointer; }
+    .btn-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--fg-4); color: var(--fg); }
+
     .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
     @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } }
     .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -218,23 +220,11 @@ const navLinks = [
     .grid-5 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     @media (min-width: 480px) { .grid-5 { grid-template-columns: repeat(3, 1fr); } }
     @media (min-width: 640px) { .grid-5 { grid-template-columns: repeat(5, 1fr); } }
-
-    /* ── BUTTONS (shared across pages) ── */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 0.75rem 1.75rem; border-radius: var(--r);
-      font-weight: 600; font-size: 0.9rem; text-decoration: none;
-      transition: background 0.15s, opacity 0.15s; cursor: pointer;
-    }
-    .btn-primary { background: var(--accent); color: #fff; border: none; }
-    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
-    .btn-ghost { background: transparent; color: var(--fg); border: 1.5px solid var(--border); }
-    .btn-ghost:hover { border-color: var(--fg-4); color: var(--fg); }
   </style>
 </head>
 <body>
   <header class="hdr">
-    <nav class="w hdr-in">
+    <nav class="w hdr-in" aria-label="Main navigation">
       <a href="/" class="logo">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="4" fill="var(--accent)"/><path d="M7 12L10.5 15.5L17 8.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         ToolRank
@@ -251,20 +241,47 @@ const navLinks = [
     </nav>
   </header>
 
-  <!-- Mobile nav OUTSIDE header to avoid backdrop-filter stacking context -->
   <div class="mnav">
     {navLinks.map(l => <a href={l.href} onclick="document.querySelector('.mnav').classList.remove('open')">{l.label}</a>)}
     <a href="https://github.com/imhiroki/toolrank" target="_blank" rel="noopener" onclick="document.querySelector('.mnav').classList.remove('open')">GitHub</a>
   </div>
 
+  {breadcrumbs && (
+    <nav class="w crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a>
+      {breadcrumbs.map(b => (
+        <><span>/</span><a href={b.href}>{b.label}</a></>
+      ))}
+    </nav>
+  )}
+
   <main><slot /></main>
 
   <footer class="ftr">
     <div class="w ftr-in">
-      <p>&copy; 2026 ToolRank. Open source.</p>
-      <div class="ftr-lk">
-        <a href="/llms.txt">llms.txt</a>
-        <a href="/sitemap-index.xml">Sitemap</a>
+      <div>
+        <p style="font-weight: 600; color: var(--fg-3); margin-bottom: 0.5rem;">ToolRank</p>
+        <p>&copy; 2026 ToolRank. Open source.</p>
+      </div>
+      <div class="ftr-nav">
+        <div class="ftr-nav-col">
+          <strong>Product</strong>
+          <a href="/score">Score</a>
+          <a href="/ranking">Ranking</a>
+          <a href="/badge">Badge</a>
+          <a href="/pricing">Pricing</a>
+        </div>
+        <div class="ftr-nav-col">
+          <strong>Learn</strong>
+          <a href="/framework">ATO Framework</a>
+          <a href="/blog">Blog</a>
+          <a href="/llms.txt">llms.txt</a>
+        </div>
+        <div class="ftr-nav-col">
+          <strong>Open Source</strong>
+          <a href="https://github.com/imhiroki/toolrank">GitHub</a>
+          <a href="/sitemap-index.xml">Sitemap</a>
+        </div>
       </div>
     </div>
   </footer>

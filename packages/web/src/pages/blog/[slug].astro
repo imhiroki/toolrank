@@ -15,34 +15,32 @@ const { Content } = await render(post);
 
 const articleSchema = {
   '@context': 'https://schema.org',
-  '@type': 'TechArticle',
+  '@type': 'Article',
   headline: post.data.title,
   description: post.data.description,
   datePublished: post.data.date,
-  author: {
-    '@type': 'Person',
-    name: post.data.author || 'Hiroki Honda',
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: 'ToolRank',
-    url: 'https://toolrank.dev',
-  },
-  url: `https://toolrank.dev/blog/${post.id}`,
+  author: { '@type': 'Person', name: post.data.author || 'Hiroki Honda' },
+  publisher: { '@type': 'Organization', name: 'ToolRank', url: 'https://toolrank.dev' },
+  mainEntityOfPage: `https://toolrank.dev/blog/${post.id}`,
 };
+
+const canonicalURL = `https://toolrank.dev/blog/${post.id}`;
+const shareText = encodeURIComponent(post.data.title);
+const shareUrl = encodeURIComponent(canonicalURL);
 ---
 
 <Layout
   title={post.data.title}
-  description={post.data.description}
+  description={post.data.description || ''}
   type="article"
   publishedDate={post.data.date}
+  breadcrumbs={[{ label: 'Blog', href: '/blog' }, { label: post.data.title, href: `/blog/${post.id}` }]}
 >
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
-  <article style="padding: 4rem 0 5rem;">
+  <article style="padding: 3rem 0 4rem;">
     <div class="w" style="max-width: 680px;">
-      <header style="margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border);">
+      <header style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border);">
         <p style="font-size: 0.8rem; color: var(--accent); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
           {new Date(post.data.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
@@ -53,131 +51,64 @@ const articleSchema = {
           {post.data.description}
         </p>
         {post.data.author && (
-          <p style="font-size: 0.8rem; color: var(--fg-4); margin-top: 1rem;">
-            By {post.data.author}
-          </p>
+          <p style="font-size: 0.8rem; color: var(--fg-4); margin-top: 1rem;">By {post.data.author}</p>
         )}
+
+        <!-- Share buttons -->
+        <div class="share-bar" style="margin-top: 1.25rem;">
+          <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`} target="_blank" rel="noopener">𝕏 Share</a>
+          <a class="share-btn" href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`} target="_blank" rel="noopener">LinkedIn</a>
+          <a class="share-btn" href={`https://news.ycombinator.com/submitlink?u=${shareUrl}&t=${shareText}`} target="_blank" rel="noopener">Hacker News</a>
+          <a class="share-btn" href={`https://reddit.com/submit?url=${shareUrl}&title=${shareText}`} target="_blank" rel="noopener">Reddit</a>
+        </div>
       </header>
 
       <div class="prose">
         <Content />
       </div>
 
-      <footer style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-        <a href="/blog" style="font-size: 0.85rem; color: var(--accent); text-decoration: none;">← Back to blog</a>
-        <a href="/score" style="font-size: 0.85rem; color: var(--fg-4); text-decoration: none;">Score your tools →</a>
+      <!-- Bottom share + CTA -->
+      <div style="margin-top: 3rem; padding: 2rem; background: var(--bg-s); border-radius: var(--r);">
+        <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem;">Found this useful?</p>
+        <div class="share-bar" style="margin-bottom: 1.25rem;">
+          <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`} target="_blank" rel="noopener">𝕏 Share</a>
+          <a class="share-btn" href={`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`} target="_blank" rel="noopener">LinkedIn</a>
+          <a class="share-btn" href={`https://news.ycombinator.com/submitlink?u=${shareUrl}&t=${shareText}`} target="_blank" rel="noopener">Hacker News</a>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--fg-2);">
+          <a href="/score" style="font-weight: 500;">Score your tools</a> ·
+          <a href="/framework" style="font-weight: 500;">Learn ATO</a> ·
+          <a href="/ranking" style="font-weight: 500;">See rankings</a>
+        </p>
+      </div>
+
+      <footer style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <a href="/blog" style="font-size: 0.85rem; color: var(--accent);">← All posts</a>
+        <a href="/score" style="font-size: 0.85rem; color: var(--fg-4);">Score your tools →</a>
       </footer>
     </div>
   </article>
 
   <style>
-    .prose {
-      font-size: 1.05rem;
-      line-height: 2;
-      color: var(--fg-2);
-      letter-spacing: 0.01em;
-    }
-    .prose h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--fg);
-      margin-top: 3rem;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    .prose h3 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--fg);
-      margin-top: 2.5rem;
-      margin-bottom: 0.75rem;
-    }
-    .prose p {
-      margin-bottom: 1.5rem;
-    }
-    .prose strong {
-      color: var(--fg);
-      font-weight: 600;
-    }
-    .prose a {
-      color: var(--accent);
-      text-decoration: underline;
-      text-underline-offset: 2px;
-      text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
-    }
-    .prose a:hover {
-      text-decoration-color: var(--accent);
-    }
-    .prose blockquote {
-      border-left: 3px solid var(--accent);
-      padding: 0.75rem 1.25rem;
-      margin: 1.5rem 0;
-      background: var(--bg-s);
-      border-radius: 0 var(--r) var(--r) 0;
-      font-style: italic;
-      color: var(--fg-2);
-    }
-    .prose blockquote p {
-      margin-bottom: 0;
-    }
-    .prose table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 2rem 0;
-      font-size: 0.875rem;
-    }
-    .prose th, .prose td {
-      padding: 0.65rem 1rem;
-      border-bottom: 1px solid var(--border);
-      text-align: left;
-    }
-    .prose th {
-      color: var(--fg-4);
-      font-weight: 600;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-    .prose ul, .prose ol {
-      padding-left: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .prose li {
-      margin-bottom: 0.5rem;
-    }
-    .prose li::marker {
-      color: var(--accent);
-    }
-    .prose hr {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 3rem 0;
-    }
-    .prose code {
-      font-size: 0.85em;
-      background: var(--bg-s);
-      padding: 0.2em 0.45em;
-      border-radius: 4px;
-      font-family: var(--mono);
-    }
-    .prose pre {
-      background: var(--bg-s);
-      padding: 1.25rem;
-      border-radius: var(--r);
-      overflow-x: auto;
-      margin: 1.5rem 0;
-      font-size: 0.85rem;
-      line-height: 1.6;
-    }
-    .prose pre code {
-      background: none;
-      padding: 0;
-    }
-    .prose img {
-      max-width: 100%;
-      border-radius: var(--r);
-      margin: 1.5rem 0;
-    }
+    .prose { font-size: 1.05rem; line-height: 2; color: var(--fg-2); letter-spacing: 0.01em; }
+    .prose h2 { font-size: 1.4rem; font-weight: 700; color: var(--fg); margin-top: 3rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    .prose h3 { font-size: 1.15rem; font-weight: 600; color: var(--fg); margin-top: 2.5rem; margin-bottom: 0.75rem; }
+    .prose p { margin-bottom: 1.5rem; }
+    .prose strong { color: var(--fg); font-weight: 600; }
+    .prose a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+    .prose a:hover { text-decoration-color: var(--accent); }
+    .prose blockquote { border-left: 3px solid var(--accent); padding: 0.75rem 1.25rem; margin: 1.5rem 0; background: var(--bg-s); border-radius: 0 var(--r) var(--r) 0; font-style: italic; color: var(--fg-2); }
+    .prose blockquote p { margin-bottom: 0; }
+    .prose table { width: 100%; border-collapse: collapse; margin: 2rem 0; font-size: 0.875rem; }
+    .prose th, .prose td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .prose th { color: var(--fg-4); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .prose ul, .prose ol { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+    .prose li { margin-bottom: 0.5rem; }
+    .prose li::marker { color: var(--accent); }
+    .prose hr { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+    .prose code { font-size: 0.85em; background: var(--bg-s); padding: 0.2em 0.45em; border-radius: 4px; font-family: var(--mono); }
+    .prose pre { background: var(--bg-s); padding: 1.25rem; border-radius: var(--r); overflow-x: auto; margin: 1.5rem 0; font-size: 0.85rem; line-height: 1.6; }
+    .prose pre code { background: none; padding: 0; }
+    .prose img { max-width: 100%; border-radius: var(--r); margin: 1.5rem 0; }
   </style>
 </Layout>

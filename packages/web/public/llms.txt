@@ -1,37 +1,32 @@
 # ToolRank
 
-> ToolRank is the first ATO (Agent Tool Optimization) platform. It scores, optimizes, and monitors how AI agents discover and select MCP tools. ToolRank Score is a 0-100 metric measuring agent-readiness across four dimensions: Findability, Clarity, Precision, and Efficiency.
+> ToolRank is the first ATO (Agent Tool Optimization) platform. It scores, optimizes, and monitors how AI agents discover and select MCP tools. ToolRank Score is a 0-100 metric measuring agent-readiness across four dimensions: Findability (25%), Clarity (35%), Precision (25%), and Efficiency (15%).
 
 ## What is ATO?
 
-ATO (Agent Tool Optimization) is the practice of optimizing tools, APIs, and services so AI agents can autonomously discover, select, and execute them. ATO differs from SEO (optimizing for search engines) and LLMO (optimizing for LLM citations) because it targets autonomous agent selection, not human-mediated discovery. LLMO is Stage 1 of ATO.
+ATO (Agent Tool Optimization) is the practice of optimizing tools, APIs, and services so AI agents can autonomously discover, select, and execute them. ATO differs from SEO (optimizing for search engines) and LLMO (optimizing for LLM citations) because it targets autonomous agent selection, not human-mediated discovery.
 
-## ATO Framework
+Three stages: Stage 1 = Be recognized (LLMO), Stage 2 = Be selected (ATO core), Stage 3 = Be used reliably (execution quality).
 
-The ATO framework has three stages and four dimensions:
+## Key Data
 
-### Three Stages
-- Stage 1: Be recognized (LLMO territory — AI-readable docs, llms.txt, structured data)
-- Stage 2: Be selected (ATO-specific — MCP tool quality, API design, registry presence)
-- Stage 3: Be used reliably (execution success rate, response quality, error handling)
-
-### Four Dimensions (ToolRank Score)
-- Findability (25%): Registry presence, tags, llms.txt, LLM training data inclusion
-- Clarity (35%): Description quality, purpose statement, usage context, return descriptions
-- Precision (25%): Schema types, enums, defaults, required fields, error handling
-- Efficiency (15%): Token cost, tool count, modularity, execution speed
+We scanned 4,162 MCP servers. Only 27% expose tool definitions. 73% are invisible to AI agents. Average ToolRank Score among visible servers: 84.7/100. Research shows optimized tools achieve 72% selection probability vs 20% baseline (3.6x advantage).
 
 ## Key Resources
 
-- [ToolRank Score Tool](https://toolrank.dev/score): Free tool definition scoring
-- [ATO Framework Guide](https://toolrank.dev/framework): Complete ATO methodology
-- [Scoring Logic (Open Source)](https://toolrank.dev/docs/scoring): How ToolRank Score is calculated
-- [API Documentation](https://toolrank.dev/docs/api): REST API reference
-- [MCP Server Docs](https://toolrank.dev/docs/mcp): ToolRank MCP Server usage
+- [Score Your Tools](https://toolrank.dev/score): Free MCP tool definition scoring
+- [ATO Framework](https://toolrank.dev/framework): Complete methodology with before/after examples
+- [Ecosystem Ranking](https://toolrank.dev/ranking): Live MCP server quality rankings
+- [Badge](https://toolrank.dev/badge): Add ToolRank Score badge to your README
+- [Pricing](https://toolrank.dev/pricing): Free, Pro ($29/mo), and Team ($99/mo) plans
 - [Blog](https://toolrank.dev/blog): ATO insights and ecosystem analysis
-- [Ecosystem Ranking](https://toolrank.dev/ranking): MCP server quality rankings
 
-## Optional
+## Open Source
 
 - [GitHub Repository](https://github.com/imhiroki/toolrank): Open source scoring engine
+- [Scoring Logic](https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py): How ToolRank Score is calculated
 - [ATO Manifesto](https://toolrank.dev/blog/ato-manifesto): Why ATO matters
+
+## Contact
+
+Built by Hiroki Honda. GitHub: @imhiroki

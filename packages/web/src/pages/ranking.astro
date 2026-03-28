@@ -10,6 +10,7 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
 
 <Layout
   title="MCP Server Quality Ranking"
+  breadcrumbs={[{ label: "Ranking", href: "/ranking" }]}
   description="Live ranking of MCP servers by ToolRank Score. See how AI agents evaluate tool quality across Findability, Clarity, Precision, and Efficiency. Updated weekly."
 >
   <section style="padding: 3rem 0 1rem;">
@@ -50,8 +51,20 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
   {hasData && (
     <section style="padding: 0 0 1rem;">
       <div class="w" style="max-width: 900px;">
-        <input type="text" id="rank-search" placeholder="Search servers..."
-          style="width: 100%; padding: 0.6rem 0.875rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg-s); color: var(--fg); outline: none;" />
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+          <input type="text" id="rank-search" placeholder="Search servers..."
+            style="flex: 1; min-width: 200px; padding: 0.6rem 0.875rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg-s); color: var(--fg); outline: none;" />
+          <select id="rank-level" style="padding: 0.5rem 0.75rem; font-size: 0.8rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg-s); color: var(--fg); cursor: pointer;">
+            <option value="all">All levels</option>
+            <option value="Dominant">Dominant (85+)</option>
+            <option value="Preferred">Preferred (70-84)</option>
+            <option value="Selectable">Selectable (50-69)</option>
+          </select>
+        </div>
+        <div class="share-bar">
+          <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('MCP server quality rankings by ToolRank')}&url=https://toolrank.dev/ranking`} target="_blank" rel="noopener">𝕏 Share</a>
+          <a class="share-btn" href={`https://www.linkedin.com/sharing/share-offsite/?url=https://toolrank.dev/ranking`} target="_blank" rel="noopener">LinkedIn</a>
+        </div>
       </div>
     </section>
   )}
@@ -67,11 +80,11 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
                 <tr>
                   <th>#</th>
                   <th style="text-align:left;">Server</th>
-                  <th>Score</th>
-                  <th class="hide-mobile">F</th>
-                  <th class="hide-mobile">C</th>
-                  <th class="hide-mobile">P</th>
-                  <th class="hide-mobile">E</th>
+                  <th data-sort="score">Score ↕</th>
+                  <th class="hide-mobile" data-sort="f">F ↕</th>
+                  <th class="hide-mobile" data-sort="c">C ↕</th>
+                  <th class="hide-mobile" data-sort="p">P ↕</th>
+                  <th class="hide-mobile" data-sort="e">E ↕</th>
                   <th>Level</th>
                 </tr>
               </thead>
@@ -79,7 +92,7 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
                 {scores.map((s, i) => {
                   const lvlC = { 'Dominant': 'var(--accent)', 'Preferred': 'var(--ok)', 'Selectable': 'var(--warn)', 'Visible': 'var(--fg-4)', 'Absent': 'var(--err)' };
                   return (
-                    <tr data-name={(s.display_name || s.server_name).toLowerCase()}>
+                    <tr data-name={(s.display_name || s.server_name).toLowerCase()} data-level={(() => { if (s.total_score >= 85) return 'Dominant'; if (s.total_score >= 70) return 'Preferred'; if (s.total_score >= 50) return 'Selectable'; return 'Other'; })()} data-score={Math.round(s.total_score)} data-f={Math.round(s.findability)} data-c={Math.round(s.clarity)} data-p={Math.round(s.precision)} data-e={Math.round(s.efficiency)}>
                       <td style="color:var(--fg-4);">{i + 1}</td>
                       <td style="text-align:left;">
                         <span style="font-weight:500;">{s.display_name || s.server_name}</span>
@@ -128,11 +141,40 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
   {hasData && (
     <script>
       const input = document.getElementById('rank-search');
+      const levelSelect = document.getElementById('rank-level');
       const rows = document.querySelectorAll('#rank-table tbody tr');
-      input?.addEventListener('input', () => {
-        const q = input.value.toLowerCase();
+      
+      function filterRows() {
+        const q = (input?.value || '').toLowerCase();
+        const level = levelSelect?.value || 'all';
         rows.forEach(r => {
-          r.style.display = r.dataset.name?.includes(q) ? '' : 'none';
+          const nameMatch = !q || r.dataset.name?.includes(q);
+          const levelMatch = level === 'all' || r.dataset.level === level;
+          r.style.display = (nameMatch && levelMatch) ? '' : 'none';
+        });
+      }
+      
+      input?.addEventListener('input', filterRows);
+      levelSelect?.addEventListener('change', filterRows);
+
+      // Sortable headers
+      document.querySelectorAll('.rank-table th[data-sort]').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+          const col = th.dataset.sort;
+          const tbody = document.querySelector('#rank-table tbody');
+          const rowsArr = Array.from(tbody.querySelectorAll('tr'));
+          const asc = th.dataset.dir === 'asc';
+          th.dataset.dir = asc ? 'desc' : 'asc';
+          rowsArr.sort((a, b) => {
+            const av = parseFloat(a.dataset[col] || '0');
+            const bv = parseFloat(b.dataset[col] || '0');
+            return asc ? av - bv : bv - av;
+          });
+          rowsArr.forEach((r, i) => {
+            tbody.appendChild(r);
+            r.querySelector('td:first-child').textContent = i + 1;
+          });
         });
       });
     </script>
@@ -142,6 +184,8 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
     .rank-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .rank-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
     .rank-table th { padding: 0.6rem 0.5rem; color: var(--fg-4); font-weight: 500; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid var(--border); text-align: center; }
+    .rank-table th[data-sort] { cursor: pointer; user-select: none; }
+    .rank-table th[data-sort]:hover { color: var(--fg-2); }
     .rank-table td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); text-align: center; }
     .rank-table tbody tr:hover { background: var(--bg-s); }
     @media (max-width: 639px) {
