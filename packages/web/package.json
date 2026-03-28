@@ -1,0 +1,21 @@
+{
+  "name": "web",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@astrojs/react": "^5.0.2",
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^6.1.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

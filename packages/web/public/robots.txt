@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# AI Crawlers - welcome
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://toolrank.dev/sitemap-index.xml

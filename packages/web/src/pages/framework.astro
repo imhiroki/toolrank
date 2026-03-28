@@ -1,0 +1,222 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+  title="ATO Framework — Agent Tool Optimization"
+  description="The ATO (Agent Tool Optimization) framework: 3 stages and 4 dimensions for optimizing how AI agents discover, select, and use your tools. LLMO is just Stage 1."
+>
+  <section style="padding: 4rem 0 2rem;">
+    <div class="container" style="max-width: 720px;">
+      <h1 style="font-size: 2.25rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem;">
+        The ATO Framework
+      </h1>
+      <p style="font-size: 1.05rem; color: var(--color-text-secondary); line-height: 1.7;">
+        Agent Tool Optimization (ATO) is the practice of optimizing your tools, APIs, and services 
+        so AI agents autonomously discover, select, and execute them. ATO is to the agent economy 
+        what SEO was to the search economy.
+      </p>
+    </div>
+  </section>
+
+  <!-- Why ATO -->
+  <section style="padding: 2rem 0;">
+    <div class="container" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Why ATO matters now</h2>
+      <p style="color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 1rem;">
+        The MCP ecosystem now has over 10,000 servers with 97 million monthly SDK downloads. 
+        AI agents are autonomously selecting tools — choosing which APIs to call, which services 
+        to use, which databases to query. When an agent needs a CRM tool, it picks from dozens 
+        of candidates. Research shows that 97.1% of tool descriptions contain quality defects, 
+        and tools with optimized descriptions are selected 3.6x more often.
+      </p>
+      <p style="color: var(--color-text-secondary); line-height: 1.7;">
+        This is the same dynamic that created the SEO industry: when search engines became the 
+        primary way humans found websites, optimizing for search became essential. Now that agents 
+        are becoming the primary way AI systems find tools, optimizing for agent selection is 
+        the next frontier.
+      </p>
+    </div>
+  </section>
+
+  <!-- Three Stages -->
+  <section style="padding: 2rem 0;">
+    <div class="container" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Three stages of agent selection</h2>
+      
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="padding: 1.5rem; border-left: 3px solid var(--color-text-tertiary); background: var(--color-bg-alt); border-radius: 0 var(--radius) var(--radius) 0;">
+          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-tertiary); margin-bottom: 0.25rem;">Stage 1</p>
+          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Be recognized</h3>
+          <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6;">
+            AI systems know your tool exists. Your documentation is in LLM training data. 
+            Your site has llms.txt. Structured data is in place. This is where LLMO, GEO, 
+            and AEO operate — and where they stop. Being recognized is necessary but not sufficient.
+          </p>
+          <p style="font-size: 0.8rem; color: var(--color-text-tertiary); margin-top: 0.5rem;">
+            Equivalent: appearing in search results (impression)
+          </p>
+        </div>
+
+        <div style="padding: 1.5rem; border-left: 3px solid var(--color-accent); background: var(--color-bg-alt); border-radius: 0 var(--radius) var(--radius) 0;">
+          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-accent); margin-bottom: 0.25rem;">Stage 2</p>
+          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Be selected</h3>
+          <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6;">
+            When an agent searches for a tool, yours appears in the candidate list and gets chosen 
+            over competitors. Your tool name is searchable via BM25 and regex. Your description 
+            clearly states purpose, usage context, and return values. Your schema is precisely 
+            defined. This is ATO's core contribution — the layer LLMO does not cover.
+          </p>
+          <p style="font-size: 0.8rem; color: var(--color-accent); margin-top: 0.5rem;">
+            Equivalent: getting the click (conversion)
+          </p>
+        </div>
+
+        <div style="padding: 1.5rem; border-left: 3px solid var(--color-accent); background: var(--color-bg-alt); border-radius: 0 var(--radius) var(--radius) 0;">
+          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-accent); margin-bottom: 0.25rem;">Stage 3</p>
+          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Be used reliably</h3>
+          <p style="font-size: 0.9rem; color: var(--color-text-secondary); line-height: 1.6;">
+            Once selected, your tool executes successfully. Errors are handled gracefully. 
+            Responses are structured and useful. The agent comes back next time. This is 
+            where per-call revenue, retention, and long-term value are built. No other 
+            optimization framework addresses this stage.
+          </p>
+          <p style="font-size: 0.8rem; color: var(--color-accent); margin-top: 0.5rem;">
+            Equivalent: repeat purchase (retention)
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Four Dimensions -->
+  <section style="padding: 2rem 0;">
+    <div class="container" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Four dimensions of ToolRank Score</h2>
+      <p style="color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
+        ToolRank Score evaluates every tool across four dimensions. Each dimension is scored 
+        independently, so you know exactly what to fix and in what order.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">
+            Findability <span style="font-weight: 400; color: var(--color-text-tertiary); font-size: 0.85rem;">25%</span>
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6;">
+            Can agents discover your tool? Covers registry presence (Smithery, MCP Registry, npm), 
+            category tagging, verified/deployed status, llms.txt, and LLM training data inclusion. 
+            A tool that isn't registered anywhere has zero chance of being selected.
+          </p>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">
+            Clarity <span style="font-weight: 400; color: var(--color-text-tertiary); font-size: 0.85rem;">35% — highest weight</span>
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6;">
+            Can agents understand what your tool does? Evaluates six description components: 
+            purpose statement, usage examples, error handling, parameter descriptions, return 
+            descriptions, and constraints. Research identified 18 "smell" categories — quality 
+            defects that mislead agents. Clarity has the highest impact on selection: improving 
+            functionality descriptions alone yields +11.6% selection improvement.
+          </p>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">
+            Precision <span style="font-weight: 400; color: var(--color-text-tertiary); font-size: 0.85rem;">25%</span>
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6;">
+            Is your interface precisely defined? Checks type definitions for every parameter, 
+            enum constraints for limited-value fields, default values for optional parameters, 
+            required field declarations, and error response structures. A vague schema leads to 
+            incorrect parameter filling and failed executions.
+          </p>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
+          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">
+            Efficiency <span style="font-weight: 400; color: var(--color-text-tertiary); font-size: 0.85rem;">15%</span>
+          </h3>
+          <p style="font-size: 0.875rem; color: var(--color-text-secondary); line-height: 1.6;">
+            Are you token-efficient? Measures estimated token cost of your tool definitions, 
+            total tool count (5-15 is optimal; accuracy degrades past 20), naming conventions 
+            for search compatibility, and execution speed. GitHub cut their MCP server from 
+            40 tools to 13 and benchmarks improved.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEO Analogy -->
+  <section style="padding: 2rem 0;">
+    <div class="container" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">ATO maps directly to SEO</h2>
+      <p style="color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 1.5rem;">
+        If you understand SEO, you already understand ATO. The concepts are parallel — 
+        only the target has changed from search engines to AI agents.
+      </p>
+      
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--color-border);">
+              <th style="text-align: left; padding: 0.75rem 1rem; color: var(--color-text-secondary);">SEO concept</th>
+              <th style="text-align: left; padding: 0.75rem 1rem; color: var(--color-accent);">ATO equivalent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">Technical SEO</td>
+              <td style="padding: 0.75rem 1rem;">MCP tool definitions, API schemas, Agent Cards</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">Content SEO</td>
+              <td style="padding: 0.75rem 1rem;">Documentation AI-readability, llms.txt (= LLMO)</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">Backlinks</td>
+              <td style="padding: 0.75rem 1rem;">Registry presence, cross-tool references, ecosystem trust</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">PageRank / Domain Authority</td>
+              <td style="padding: 0.75rem 1rem;">ToolRank Score</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">Google Search Console</td>
+              <td style="padding: 0.75rem 1rem;">ToolRank Monitor</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--color-border);">
+              <td style="padding: 0.75rem 1rem;">Algorithm updates</td>
+              <td style="padding: 0.75rem 1rem;">Agent selection algorithm changes (Tool Search, registry ranking)</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.75rem 1rem;">Core Web Vitals</td>
+              <td style="padding: 0.75rem 1rem;">Execution success rate, response latency</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section style="padding: 3rem 0;">
+    <div class="container" style="max-width: 720px; text-align: center;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem;">Ready to optimize?</h2>
+      <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Start with a free ToolRank Score. See exactly where your tools stand and what to fix.
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/score" style="padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; text-decoration: none;">
+          Score your tools
+        </a>
+        <a href="/docs/scoring" style="padding: 0.75rem 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.9rem; color: var(--color-text); text-decoration: none;">
+          Read scoring docs
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
