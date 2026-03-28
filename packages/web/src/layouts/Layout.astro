@@ -20,7 +20,6 @@ const {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title === 'ToolRank' ? title : `${title} | ToolRank`;
 
-// Structured Data: Organization
 const orgSchema = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
@@ -28,12 +27,9 @@ const orgSchema = {
   url: 'https://toolrank.dev',
   description: 'Agent Tool Optimization (ATO) platform. Score, optimize, and monitor how AI agents discover and select your tools.',
   foundingDate: '2026',
-  sameAs: [
-    'https://github.com/imhiroki/toolrank',
-  ],
+  sameAs: ['https://github.com/imhiroki/toolrank'],
 };
 
-// Structured Data: WebSite
 const siteSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
@@ -47,7 +43,6 @@ const siteSchema = {
   },
 };
 
-// Structured Data: SoftwareApplication
 const appSchema = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
@@ -63,6 +58,13 @@ const appSchema = {
     description: 'Free tier: 5 score diagnoses per month',
   },
 };
+
+const navLinks = [
+  { href: '/score', label: 'Score' },
+  { href: '/framework', label: 'Framework' },
+  { href: '/ranking', label: 'Ranking' },
+  { href: '/blog', label: 'Blog' },
+];
 ---
 
 <!doctype html>
@@ -71,140 +73,163 @@ const appSchema = {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  
-  <!-- SEO Core -->
+
   <title>{fullTitle}</title>
   <meta name="description" content={description} />
   <link rel="canonical" href={canonicalURL} />
   {noindex && <meta name="robots" content="noindex,nofollow" />}
-  
-  <!-- Open Graph -->
+
   <meta property="og:type" content={type} />
   <meta property="og:url" content={canonicalURL} />
   <meta property="og:title" content={fullTitle} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={new URL(ogImage, Astro.site)} />
   <meta property="og:site_name" content="ToolRank" />
-  
-  <!-- Twitter -->
+
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={fullTitle} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
-  
-  {publishedDate && (
-    <meta property="article:published_time" content={publishedDate} />
-  )}
-  
-  <!-- Structured Data -->
+
+  {publishedDate && <meta property="article:published_time" content={publishedDate} />}
+
   <script type="application/ld+json" set:html={JSON.stringify(orgSchema)} />
   <script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
   {Astro.url.pathname === '/' && (
     <script type="application/ld+json" set:html={JSON.stringify(appSchema)} />
   )}
-  
-  <!-- Preconnect -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <style is:global>
     :root {
-      --color-bg: #fafaf9;
-      --color-bg-alt: #f5f5f4;
-      --color-text: #1c1917;
-      --color-text-secondary: #57534e;
-      --color-text-tertiary: #a8a29e;
-      --color-accent: #6d28d9;
-      --color-accent-light: #8b5cf6;
-      --color-border: #e7e5e4;
-      --color-success: #059669;
-      --color-warning: #d97706;
-      --color-danger: #dc2626;
-      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-      --max-width: 1120px;
-      --radius: 8px;
+      --bg: #fafaf9;
+      --bg-s: #f5f5f4;
+      --bg-m: #e7e5e4;
+      --fg: #1c1917;
+      --fg-2: #44403c;
+      --fg-3: #78716c;
+      --fg-4: #a8a29e;
+      --accent: #6d28d9;
+      --accent-s: rgba(109, 40, 217, 0.07);
+      --border: #e7e5e4;
+      --ok: #059669;
+      --warn: #d97706;
+      --err: #dc2626;
+      --sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --w: 1080px;
+      --r: 8px;
     }
-
     @media (prefers-color-scheme: dark) {
       :root {
-        --color-bg: #0c0a09;
-        --color-bg-alt: #1c1917;
-        --color-text: #fafaf9;
-        --color-text-secondary: #a8a29e;
-        --color-text-tertiary: #78716c;
-        --color-border: #292524;
-        --color-accent: #8b5cf6;
-        --color-accent-light: #a78bfa;
+        --bg: #0c0a09;
+        --bg-s: #1c1917;
+        --bg-m: #292524;
+        --fg: #fafaf9;
+        --fg-2: #d6d3d1;
+        --fg-3: #a8a29e;
+        --fg-4: #78716c;
+        --accent: #a78bfa;
+        --accent-s: rgba(167, 139, 250, 0.1);
+        --border: #292524;
       }
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { font-family: var(--sans); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+    body { min-height: 100dvh; line-height: 1.6; display: flex; flex-direction: column; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { opacity: 0.85; }
+    code { font-family: var(--mono); font-size: 0.85em; background: var(--bg-s); padding: 0.15em 0.4em; border-radius: 4px; }
 
-    html {
-      font-family: var(--font-sans);
-      color: var(--color-text);
-      background: var(--color-bg);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+    /* Container */
+    .w { width: 100%; max-width: var(--w); margin: 0 auto; padding-inline: 1.25rem; }
+    @media (min-width: 640px) { .w { padding-inline: 2rem; } }
+
+    /* Header */
+    .hdr {
+      position: sticky; top: 0; z-index: 50;
+      background: color-mix(in srgb, var(--bg) 80%, transparent);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
+    .hdr-in { display: flex; align-items: center; justify-content: space-between; height: 3.25rem; }
 
-    body {
-      min-height: 100vh;
-      line-height: 1.6;
-    }
+    .logo { display: flex; align-items: center; gap: 0.4rem; font-weight: 700; font-size: 0.95rem; color: var(--fg); letter-spacing: -0.02em; }
+    .logo:hover { opacity: 1; }
 
-    a { color: var(--color-accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    .dnav { display: none; gap: 0.125rem; align-items: center; }
+    .dnav a { color: var(--fg-3); font-size: 0.8rem; font-weight: 500; padding: 0.3rem 0.6rem; border-radius: 6px; transition: color 0.15s, background 0.15s; }
+    .dnav a:hover { color: var(--fg); background: var(--bg-s); opacity: 1; }
+    .dnav .gh { margin-left: 0.25rem; padding: 0.3rem; display: flex; }
+    .dnav .gh svg { width: 17px; height: 17px; fill: var(--fg-4); transition: fill 0.15s; display: block; }
+    .dnav .gh:hover svg { fill: var(--fg); }
 
-    code {
-      font-family: var(--font-mono);
-      font-size: 0.875em;
-      background: var(--color-bg-alt);
-      padding: 0.15em 0.4em;
-      border-radius: 4px;
-    }
+    @media (min-width: 640px) { .dnav { display: flex; } .mbtn { display: none; } .mnav { display: none !important; } }
 
-    .container {
-      max-width: var(--max-width);
-      margin: 0 auto;
-      padding: 0 1.5rem;
-    }
+    .mbtn { display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; background: none; border: none; cursor: pointer; color: var(--fg-3); border-radius: 6px; -webkit-tap-highlight-color: transparent; }
+    .mbtn:hover { background: var(--bg-s); }
+
+    .mnav { display: none; position: fixed; inset: 3.25rem 0 0 0; background: var(--bg); z-index: 40; padding: 1rem 1.25rem; flex-direction: column; }
+    .mnav.open { display: flex; }
+    .mnav a { color: var(--fg-2); font-size: 0.95rem; font-weight: 500; padding: 0.875rem 0; border-bottom: 1px solid var(--border); }
+    .mnav a:last-child { border-bottom: none; }
+    .mnav a:hover { color: var(--accent); opacity: 1; }
+
+    /* Footer */
+    .ftr { margin-top: auto; border-top: 1px solid var(--border); padding: 1.5rem 0; }
+    .ftr-in { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.7rem; color: var(--fg-4); }
+    .ftr-lk { display: flex; gap: 1rem; }
+    .ftr-lk a { color: var(--fg-4); }
+    .ftr-lk a:hover { color: var(--fg-3); }
+    @media (min-width: 640px) { .ftr-in { flex-direction: row; justify-content: space-between; align-items: center; } }
+
+    /* Utility: responsive grid helper used across pages */
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 640px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } }
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    @media (min-width: 640px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+    .grid-4 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    @media (min-width: 640px) { .grid-4 { grid-template-columns: repeat(4, 1fr); } }
+    .grid-5 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    @media (min-width: 480px) { .grid-5 { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 640px) { .grid-5 { grid-template-columns: repeat(5, 1fr); } }
   </style>
 </head>
 <body>
-  <header style="border-bottom: 1px solid var(--color-border); padding: 1rem 0;">
-    <nav class="container" style="display: flex; align-items: center; justify-content: space-between;">
-      <a href="/" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.125rem; color: var(--color-text);">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="20" height="20" rx="4" fill="var(--color-accent)" />
-          <path d="M7 12L10.5 15.5L17 8.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+  <header class="hdr">
+    <nav class="w hdr-in">
+      <a href="/" class="logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="4" fill="var(--accent)"/><path d="M7 12L10.5 15.5L17 8.5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         ToolRank
       </a>
-      <div style="display: flex; gap: 1.5rem; align-items: center; font-size: 0.875rem;">
-        <a href="/score" style="color: var(--color-text-secondary);">Score</a>
-        <a href="/framework" style="color: var(--color-text-secondary);">Framework</a>
-        <a href="/ranking" style="color: var(--color-text-secondary);">Ranking</a>
-        <a href="/blog" style="color: var(--color-text-secondary);">Blog</a>
-        <a href="https://github.com/imhiroki/toolrank"
-           style="color: var(--color-text-secondary);"
-           target="_blank" rel="noopener">GitHub</a>
+      <div class="dnav">
+        {navLinks.map(l => <a href={l.href}>{l.label}</a>)}
+        <a href="https://github.com/imhiroki/toolrank" class="gh" target="_blank" rel="noopener" aria-label="GitHub">
+          <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
       </div>
+      <button class="mbtn" onclick="document.querySelector('.mnav').classList.toggle('open')" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>
+      </button>
     </nav>
+    <div class="mnav">
+      {navLinks.map(l => <a href={l.href} onclick="document.querySelector('.mnav').classList.remove('open')">{l.label}</a>)}
+      <a href="https://github.com/imhiroki/toolrank" target="_blank" rel="noopener" onclick="document.querySelector('.mnav').classList.remove('open')">GitHub</a>
+    </div>
   </header>
 
-  <main>
-    <slot />
-  </main>
+  <main><slot /></main>
 
-  <footer style="border-top: 1px solid var(--color-border); padding: 2rem 0; margin-top: 4rem;">
-    <div class="container" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--color-text-tertiary);">
+  <footer class="ftr">
+    <div class="w ftr-in">
       <p>&copy; 2026 ToolRank. Open source.</p>
-      <div style="display: flex; gap: 1rem;">
-        <a href="/llms.txt" style="color: var(--color-text-tertiary);">llms.txt</a>
-        <a href="/sitemap-index.xml" style="color: var(--color-text-tertiary);">Sitemap</a>
+      <div class="ftr-lk">
+        <a href="/llms.txt">llms.txt</a>
+        <a href="/sitemap-index.xml">Sitemap</a>
       </div>
     </div>
   </footer>

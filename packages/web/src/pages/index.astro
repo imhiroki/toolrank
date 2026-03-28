@@ -10,7 +10,7 @@ const faqSchema = {
       name: 'What is ATO (Agent Tool Optimization)?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them. Unlike SEO (optimizing for search engines) or LLMO (optimizing for LLM citations), ATO focuses on being chosen and used by autonomous AI agents. ATO includes three stages: being recognized (Stage 1), being selected (Stage 2), and being used reliably (Stage 3).',
+        text: 'ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them. Unlike SEO (optimizing for search engines) or LLMO (optimizing for LLM citations), ATO focuses on being chosen and used by autonomous AI agents.',
       },
     },
     {
@@ -18,7 +18,7 @@ const faqSchema = {
       name: 'What is ToolRank Score?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability (can agents find you?), Clarity (can agents understand you?), Precision (is your schema well-defined?), and Efficiency (are you token-efficient?). Research shows that tools with optimized descriptions achieve 72% selection probability vs 20% baseline.',
+        text: 'ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability, Clarity, Precision, and Efficiency.',
       },
     },
     {
@@ -26,15 +26,7 @@ const faqSchema = {
       name: 'How is ATO different from SEO and LLMO?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'SEO optimizes for search engines (human searches). LLMO optimizes for LLM citations (human asks AI). ATO optimizes for agent tool selection (no human in the loop). The key difference: SEO and LLMO result in mentions and links. ATO results in your API being called and transactions occurring. LLMO is Stage 1 of ATO — necessary but not sufficient.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Why does ATO matter?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'The MCP ecosystem has 10,000+ servers and 97M monthly SDK downloads. Research shows 97.1% of MCP tool descriptions have quality defects. As more AI agents autonomously select tools, the competition for selection increases. Tools that are optimized for agent discovery get selected 3.6x more often than those that are not.',
+        text: 'SEO optimizes for search engines (human searches). LLMO optimizes for LLM citations (human asks AI). ATO optimizes for agent tool selection (no human in the loop). ATO results in your API being called and transactions occurring.',
       },
     },
   ],
@@ -48,159 +40,203 @@ const faqSchema = {
   <script type="application/ld+json" set:html={JSON.stringify(faqSchema)} />
 
   <!-- Hero -->
-  <section style="padding: 5rem 0 3rem; text-align: center;">
-    <div class="container" style="max-width: 720px;">
-      <p style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent); margin-bottom: 1rem;">
-        Agent Tool Optimization
-      </p>
-      <h1 style="font-size: 2.75rem; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 1.25rem;">
-        Are AI agents choosing<br />your tools?
-      </h1>
-      <p style="font-size: 1.125rem; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 2rem;">
+  <section class="hero">
+    <div class="w hero-inner">
+      <p class="hero-tag">Agent Tool Optimization</p>
+      <h1 class="hero-h1">Are AI agents choosing your tools?</h1>
+      <p class="hero-sub">
         97% of MCP tool descriptions have quality defects. 
         Optimized tools get selected <strong>3.6x more</strong>.
-        <br />ToolRank scores and fixes your tool definitions so agents pick you first.
+        ToolRank scores and fixes your tool definitions so agents pick you first.
       </p>
-      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-        <a href="/score" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--color-accent); color: white; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; text-decoration: none;">
-          Score your tools — free
-        </a>
-        <a href="/framework" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-weight: 500; font-size: 0.9rem; color: var(--color-text); text-decoration: none;">
-          Learn ATO framework
-        </a>
+      <div class="hero-cta">
+        <a href="/score" class="btn-primary">Score your tools — free</a>
+        <a href="/framework" class="btn-ghost">Learn ATO framework</a>
       </div>
     </div>
   </section>
 
-  <!-- SEO vs LLMO vs ATO -->
-  <section style="padding: 3rem 0;">
-    <div class="container">
-      <h2 style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem;">
-        SEO got you found. LLMO got you cited. ATO gets you <em>used</em>.
-      </h2>
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 900px; margin: 0 auto;">
-        <div style="padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
-          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-tertiary); margin-bottom: 0.5rem;">Stage 0</p>
-          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">SEO</h3>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Human searches Google.<br />Your page appears.</p>
-          <p style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 0.75rem;">Result: a click</p>
+  <!-- SEO → LLMO → ATO -->
+  <section class="sec">
+    <div class="w">
+      <h2 class="sec-h2">SEO got you found. LLMO got you cited. ATO gets you <em>used</em>.</h2>
+      <div class="grid-3 stage-grid">
+        <div class="stage-card">
+          <span class="stage-label">Stage 0</span>
+          <h3>SEO</h3>
+          <p>Human searches Google. Your page appears.</p>
+          <span class="stage-result">Result: a click</span>
         </div>
-        <div style="padding: 1.5rem; border: 1px solid var(--color-border); border-radius: var(--radius);">
-          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-tertiary); margin-bottom: 0.5rem;">Stage 1</p>
-          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">LLMO</h3>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Human asks AI.<br />Your brand is mentioned.</p>
-          <p style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 0.75rem;">Result: a mention</p>
+        <div class="stage-card">
+          <span class="stage-label">Stage 1</span>
+          <h3>LLMO</h3>
+          <p>Human asks AI. Your brand is mentioned.</p>
+          <span class="stage-result">Result: a mention</span>
         </div>
-        <div style="padding: 1.5rem; border: 2px solid var(--color-accent); border-radius: var(--radius); background: color-mix(in srgb, var(--color-accent) 5%, transparent);">
-          <p style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-accent); margin-bottom: 0.5rem;">Stage 2+3</p>
-          <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem;">ATO</h3>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Agent autonomously acts.<br />Your API is called.</p>
-          <p style="font-size: 0.75rem; color: var(--color-accent); font-weight: 500; margin-top: 0.75rem;">Result: a transaction</p>
+        <div class="stage-card stage-card--active">
+          <span class="stage-label" style="color: var(--accent);">Stage 2+3</span>
+          <h3>ATO</h3>
+          <p>Agent autonomously acts. Your API is called.</p>
+          <span class="stage-result" style="color: var(--accent); font-weight: 500;">Result: a transaction</span>
         </div>
       </div>
     </div>
   </section>
 
   <!-- 4 Dimensions -->
-  <section style="padding: 3rem 0;">
-    <div class="container">
-      <h2 style="text-align: center; font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem;">
-        Four dimensions of agent-readiness
-      </h2>
-      <p style="text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 2rem;">
-        ToolRank Score measures each dimension separately so you know exactly what to fix.
-      </p>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; max-width: 720px; margin: 0 auto;">
-        <div style="padding: 1.25rem; border-radius: var(--radius); background: var(--color-bg-alt);">
-          <p style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent); margin-bottom: 0.25rem;">Findability (25%)</p>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Can agents discover you? Registry presence, tags, llms.txt.</p>
+  <section class="sec">
+    <div class="w">
+      <h2 class="sec-h2">Four dimensions of agent-readiness</h2>
+      <p class="sec-sub">ToolRank Score measures each dimension separately so you know exactly what to fix.</p>
+      <div class="grid-2 dim-grid">
+        <div class="dim-card">
+          <span class="dim-label">Findability · 25%</span>
+          <p>Can agents discover you? Registry presence, tags, llms.txt.</p>
         </div>
-        <div style="padding: 1.25rem; border-radius: var(--radius); background: var(--color-bg-alt);">
-          <p style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent); margin-bottom: 0.25rem;">Clarity (35%)</p>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Can agents understand you? Description quality, purpose, usage context.</p>
+        <div class="dim-card">
+          <span class="dim-label">Clarity · 35%</span>
+          <p>Can agents understand you? Description quality, purpose, usage context.</p>
         </div>
-        <div style="padding: 1.25rem; border-radius: var(--radius); background: var(--color-bg-alt);">
-          <p style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent); margin-bottom: 0.25rem;">Precision (25%)</p>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Is your interface precise? Schema types, enums, error handling.</p>
+        <div class="dim-card">
+          <span class="dim-label">Precision · 25%</span>
+          <p>Is your interface precise? Schema types, enums, error handling.</p>
         </div>
-        <div style="padding: 1.25rem; border-radius: var(--radius); background: var(--color-bg-alt);">
-          <p style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent); margin-bottom: 0.25rem;">Efficiency (15%)</p>
-          <p style="font-size: 0.85rem; color: var(--color-text-secondary);">Are you token-efficient? Context cost, tool count, modularity.</p>
+        <div class="dim-card">
+          <span class="dim-label">Efficiency · 15%</span>
+          <p>Are you token-efficient? Context cost, tool count, modularity.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Social Proof / Data -->
-  <section style="padding: 3rem 0;">
-    <div class="container" style="text-align: center;">
-      <div style="display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap;">
-        <div>
-          <p style="font-size: 2rem; font-weight: 700; color: var(--color-accent);">97.1%</p>
-          <p style="font-size: 0.8rem; color: var(--color-text-tertiary);">of MCP tools have description defects</p>
+  <!-- Numbers -->
+  <section class="sec">
+    <div class="w">
+      <div class="grid-3 stat-grid">
+        <div class="stat">
+          <span class="stat-num">97.1%</span>
+          <span class="stat-label">of MCP tools have description defects</span>
         </div>
-        <div>
-          <p style="font-size: 2rem; font-weight: 700; color: var(--color-accent);">3.6x</p>
-          <p style="font-size: 0.8rem; color: var(--color-text-tertiary);">selection advantage with optimization</p>
+        <div class="stat">
+          <span class="stat-num">3.6x</span>
+          <span class="stat-label">selection advantage with optimization</span>
         </div>
-        <div>
-          <p style="font-size: 2rem; font-weight: 700; color: var(--color-accent);">10,000+</p>
-          <p style="font-size: 0.8rem; color: var(--color-text-tertiary);">MCP servers competing for selection</p>
+        <div class="stat">
+          <span class="stat-num">10,000+</span>
+          <span class="stat-label">MCP servers competing for selection</span>
         </div>
       </div>
-      <p style="font-size: 0.75rem; color: var(--color-text-tertiary); margin-top: 1.5rem;">
-        Sources: arXiv 2602.14878, arXiv 2602.18914, Anthropic MCP ecosystem data
-      </p>
+      <p class="stat-src">Sources: arXiv 2602.14878, arXiv 2602.18914, Anthropic MCP ecosystem data</p>
     </div>
   </section>
 
   <!-- CTA -->
-  <section style="padding: 3rem 0 5rem; text-align: center;">
-    <div class="container" style="max-width: 600px;">
-      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 0.75rem;">
-        Check your score in 10 seconds
-      </h2>
-      <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
-        Paste your MCP tool definition or server URL. Get your ToolRank Score with specific fixes.
-      </p>
-      <a href="/score" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 2rem; background: var(--color-accent); color: white; border-radius: var(--radius); font-weight: 600; text-decoration: none;">
-        Score your tools — free
-      </a>
+  <section class="sec cta-sec">
+    <div class="w cta-inner">
+      <h2 class="cta-h2">Check your score in 10 seconds</h2>
+      <p class="cta-sub">Paste your MCP tool definition or server URL. Get your ToolRank Score with specific fixes.</p>
+      <a href="/score" class="btn-primary">Score your tools — free</a>
     </div>
   </section>
 
-  <!-- FAQ (visible for SEO + LLMO) -->
-  <section style="padding: 3rem 0; border-top: 1px solid var(--color-border);">
-    <div class="container" style="max-width: 720px;">
-      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem;">Frequently asked questions</h2>
-      
-      <details style="border-bottom: 1px solid var(--color-border); padding: 1rem 0;">
-        <summary style="cursor: pointer; font-weight: 500; font-size: 0.9rem;">What is ATO (Agent Tool Optimization)?</summary>
-        <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.7;">
-          ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them autonomously. Unlike SEO (for search engines) or LLMO (for LLM citations), ATO focuses on the complete agent selection pipeline: being recognized (Stage 1), being chosen over competitors (Stage 2), and being used reliably (Stage 3). LLMO covers only Stage 1. ATO is the complete picture.
-        </p>
+  <!-- FAQ -->
+  <section class="sec faq-sec">
+    <div class="w faq-inner">
+      <h2 class="faq-h2">Frequently asked questions</h2>
+      <details class="faq-item">
+        <summary>What is ATO (Agent Tool Optimization)?</summary>
+        <p>ATO is the practice of optimizing your tools, APIs, and services so AI agents can discover, select, and execute them autonomously. Unlike SEO (for search engines) or LLMO (for LLM citations), ATO focuses on the complete agent selection pipeline. LLMO covers only Stage 1. ATO is the complete picture.</p>
       </details>
-      
-      <details style="border-bottom: 1px solid var(--color-border); padding: 1rem 0;">
-        <summary style="cursor: pointer; font-weight: 500; font-size: 0.9rem;">How is ATO different from LLMO?</summary>
-        <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.7;">
-          LLMO optimizes for mentions — getting your brand cited in AI responses. ATO optimizes for execution — getting your API actually called by agents. The difference is between advertising and transactions. LLMO is necessary (agents need to know you exist) but not sufficient (knowing about you doesn't mean choosing you). ATO encompasses LLMO as its first stage and adds selection optimization and execution quality.
-        </p>
+      <details class="faq-item">
+        <summary>How is ATO different from LLMO?</summary>
+        <p>LLMO optimizes for mentions — getting your brand cited in AI responses. ATO optimizes for execution — getting your API actually called by agents. The difference is between advertising and transactions.</p>
       </details>
-      
-      <details style="border-bottom: 1px solid var(--color-border); padding: 1rem 0;">
-        <summary style="cursor: pointer; font-weight: 500; font-size: 0.9rem;">What is ToolRank Score?</summary>
-        <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.7;">
-          ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability, Clarity, Precision, and Efficiency. Academic research shows that MCP tools with optimized descriptions achieve 72% selection probability versus a 20% baseline — a 3.6x advantage. ToolRank Score quantifies this advantage.
-        </p>
+      <details class="faq-item">
+        <summary>What is ToolRank Score?</summary>
+        <p>ToolRank Score is a 0-100 metric measuring how likely AI agents are to discover and select your MCP tools. It evaluates four dimensions: Findability, Clarity, Precision, and Efficiency. Research shows optimized tools achieve 72% selection probability versus a 20% baseline.</p>
       </details>
-
-      <details style="border-bottom: 1px solid var(--color-border); padding: 1rem 0;">
-        <summary style="cursor: pointer; font-weight: 500; font-size: 0.9rem;">Is ToolRank free?</summary>
-        <p style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--color-text-secondary); line-height: 1.7;">
-          Yes. The ToolRank Score diagnosis is free (5 per month). The ATO framework and scoring logic are open source. Pro features (unlimited diagnosis, automatic rewriting, monitoring) are available via paid plans.
-        </p>
+      <details class="faq-item">
+        <summary>Is ToolRank free?</summary>
+        <p>Yes. The ToolRank Score diagnosis is free. The ATO framework and scoring logic are open source. Pro features are available via paid plans.</p>
       </details>
     </div>
   </section>
+
+  <style>
+    /* Hero */
+    .hero { padding: 3rem 0 2rem; text-align: center; }
+    .hero-inner { max-width: 640px; margin: 0 auto; }
+    .hero-tag { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); margin-bottom: 0.75rem; }
+    .hero-h1 { font-size: 2rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.025em; margin-bottom: 1rem; }
+    .hero-sub { font-size: 0.95rem; color: var(--fg-2); line-height: 1.7; margin-bottom: 1.75rem; }
+    .hero-sub strong { color: var(--fg); }
+    .hero-cta { display: flex; flex-direction: column; gap: 0.625rem; align-items: center; }
+
+    @media (min-width: 640px) {
+      .hero { padding: 5rem 0 3rem; }
+      .hero-h1 { font-size: 2.75rem; }
+      .hero-sub { font-size: 1.05rem; }
+      .hero-cta { flex-direction: row; justify-content: center; }
+    }
+
+    /* Buttons */
+    .btn-primary {
+      display: inline-flex; align-items: center; padding: 0.7rem 1.4rem;
+      background: var(--accent); color: #fff; border-radius: var(--r);
+      font-weight: 600; font-size: 0.85rem; text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-ghost {
+      display: inline-flex; align-items: center; padding: 0.7rem 1.4rem;
+      border: 1px solid var(--border); border-radius: var(--r);
+      font-weight: 500; font-size: 0.85rem; color: var(--fg);
+      text-decoration: none; transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: var(--fg-4); opacity: 1; }
+
+    /* Sections */
+    .sec { padding: 2.5rem 0; }
+    @media (min-width: 640px) { .sec { padding: 3rem 0; } }
+    .sec-h2 { text-align: center; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.35; }
+    @media (min-width: 640px) { .sec-h2 { font-size: 1.5rem; } }
+    .sec-sub { text-align: center; color: var(--fg-2); font-size: 0.875rem; margin-top: -1rem; margin-bottom: 1.5rem; }
+
+    /* Stage cards */
+    .stage-grid { max-width: 780px; margin: 0 auto; }
+    .stage-card { padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--r); }
+    .stage-card--active { border: 2px solid var(--accent); background: var(--accent-s); }
+    .stage-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-4); }
+    .stage-card h3 { font-size: 1rem; font-weight: 600; margin: 0.25rem 0 0.4rem; }
+    .stage-card p { font-size: 0.825rem; color: var(--fg-2); line-height: 1.5; }
+    .stage-result { display: block; font-size: 0.7rem; color: var(--fg-4); margin-top: 0.6rem; }
+
+    /* Dimension cards */
+    .dim-grid { max-width: 640px; margin: 0 auto; }
+    .dim-card { padding: 1rem 1.25rem; border-radius: var(--r); background: var(--bg-s); }
+    .dim-label { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+    .dim-card p { font-size: 0.825rem; color: var(--fg-2); margin-top: 0.2rem; line-height: 1.5; }
+
+    /* Stats */
+    .stat-grid { max-width: 640px; margin: 0 auto; text-align: center; }
+    .stat { padding: 0.75rem 0; }
+    .stat-num { display: block; font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.75rem; color: var(--fg-4); }
+    .stat-src { text-align: center; font-size: 0.65rem; color: var(--fg-4); margin-top: 1rem; }
+
+    /* CTA */
+    .cta-sec { padding: 2rem 0 3rem; text-align: center; }
+    .cta-inner { max-width: 520px; margin: 0 auto; }
+    .cta-h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .cta-sub { color: var(--fg-2); font-size: 0.85rem; margin-bottom: 1.25rem; }
+
+    /* FAQ */
+    .faq-sec { border-top: 1px solid var(--border); padding-top: 2.5rem; }
+    .faq-inner { max-width: 640px; margin: 0 auto; }
+    .faq-h2 { font-size: 1.125rem; font-weight: 600; margin-bottom: 1.25rem; text-align: left; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 0.875rem 0; }
+    .faq-item summary { cursor: pointer; font-weight: 500; font-size: 0.875rem; list-style: none; }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item p { margin-top: 0.6rem; font-size: 0.825rem; color: var(--fg-2); line-height: 1.7; }
+  </style>
 </Layout>
