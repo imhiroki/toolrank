@@ -2,7 +2,7 @@ name: Daily Scan
 
 on:
   schedule:
-    - cron: '0 21 * * *'  # 06:00 JST daily
+    - cron: '0 21 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -18,7 +18,7 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 180  # 3 hour max for full scan
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -49,3 +49,10 @@ jobs:
           name: scan-${{ github.run_number }}
           path: packages/scanner/data/
           retention-days: 90
+
+      - name: Trigger site rebuild
+        run: |
+          git config user.name "ToolRank Bot"
+          git config user.email "bot@toolrank.dev"
+          git commit --allow-empty -m "Trigger rebuild after scan"
+          git push
