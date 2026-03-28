@@ -202,6 +202,56 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </section>
 
+  <!-- Before / After Example -->
+  <section style="padding: 2rem 0;">
+    <div class="w" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Before &amp; after: a real example</h2>
+      <p style="color: var(--fg-2); line-height: 1.7; margin-bottom: 1.5rem; font-size: 0.9rem;">
+        The same tool, two definitions. One scores 52/100. The other scores 96/100. 
+        The difference is a few minutes of work.
+      </p>
+      
+      <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+        <div style="padding: 1.25rem; border: 1px solid var(--err); border-radius: var(--r); background: var(--bg-s);">
+          <p style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--err); margin-bottom: 0.5rem;">Before — 52/100</p>
+          <pre style="font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--fg-2); overflow-x: auto; white-space: pre-wrap;" set:html={`{
+  "name": "get",
+  "description": "gets data from the api"
+}`} />
+          <p style="font-size: 0.75rem; color: var(--fg-4); margin-top: 0.5rem;">Generic name. Vague description. No schema. No context.</p>
+        </div>
+
+        <div style="padding: 1.25rem; border: 1px solid var(--ok); border-radius: var(--r); background: var(--bg-s);">
+          <p style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ok); margin-bottom: 0.5rem;">After — 96/100</p>
+          <pre style="font-family: var(--mono); font-size: 0.75rem; line-height: 1.6; color: var(--fg-2); overflow-x: auto; white-space: pre-wrap;" set:html={`{
+  "name": "search_repositories",
+  "description": "Searches for GitHub repositories
+    matching a query. Useful for finding
+    open-source projects or checking if a
+    repo exists. Returns name, description,
+    stars, language, and URL.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Search query"
+      },
+      "sort": {
+        "type": "string",
+        "enum": ["stars", "forks", "updated"],
+        "default": "stars"
+      }
+    },
+    "required": ["query"]
+  }
+}`} />
+          <p style="font-size: 0.75rem; color: var(--fg-4); margin-top: 0.5rem;">Specific name. Clear purpose + context + return value. Typed schema with enums and defaults.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section style="padding: 3rem 0;">
     <div class="w" style="max-width: 720px; text-align: center;">
@@ -213,8 +263,8 @@ import Layout from '../layouts/Layout.astro';
         <a href="/score" style="padding: 0.75rem 1.5rem; background: var(--accent); color: white; border-radius: var(--r); font-weight: 600; font-size: 0.9rem; text-decoration: none;">
           Score your tools
         </a>
-        <a href="/docs/scoring" style="padding: 0.75rem 1.5rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.9rem; color: var(--fg); text-decoration: none;">
-          Read scoring docs
+        <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py" style="padding: 0.75rem 1.5rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.9rem; color: var(--fg); text-decoration: none;">
+          View scoring logic
         </a>
       </div>
     </div>

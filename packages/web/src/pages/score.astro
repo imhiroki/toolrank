@@ -6,315 +6,244 @@ import Layout from '../layouts/Layout.astro';
   title="Score Your Tools"
   description="Get your free ToolRank Score. Paste your MCP tool definition and see how AI agents evaluate your tools across Findability, Clarity, Precision, and Efficiency."
 >
-  <section style="padding: 3rem 0;">
-    <div class="w" style="max-width: 800px;">
+  <section style="padding: 3rem 0 1rem;">
+    <div class="w" style="max-width: 720px;">
       <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Score your tools</h1>
-      <p style="color: var(--fg-2); margin-bottom: 2rem; font-size: 0.9rem;">
-        Paste your MCP tool definition JSON below. Get your ToolRank Score with specific improvements.
+      <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.7;">
+        Paste your MCP tool definition JSON and get your ToolRank Score instantly.
+        The score measures how likely AI agents are to discover and select your tools.
       </p>
     </div>
   </section>
 
+  <section style="padding: 0 0 1.5rem;">
+    <div class="w" style="max-width: 720px;">
+      <details style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.875rem 1rem; margin-bottom: 1.5rem;">
+        <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--fg-3);">Where do I find my tool definition JSON?</summary>
+        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--fg-2); line-height: 1.7;">
+          <p style="margin-bottom: 0.5rem;">Your MCP tool definition is in your server's source code — the object you pass to <code>server.tool()</code> or the <code>tools</code> array in your MCP server config.</p>
+          <p style="margin-bottom: 0.5rem;">It looks like this: <code>{'{"name": "...", "description": "...", "inputSchema": {...}}'}</code></p>
+          <p>You can also paste an entire server response with <code>{'{"tools": [...]}'}</code> to score all tools at once.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
   <section style="padding: 0 0 4rem;">
-    <div class="w" style="max-width: 800px;">
-      <!-- React island: only this component loads JS -->
+    <div class="w" style="max-width: 720px;">
       <div id="score-app"></div>
     </div>
   </section>
 
   <script>
-    // Client-side scoring engine (Level A only, runs in browser, zero API cost)
-    // This is a simplified version for the browser. Full engine runs server-side.
-    
+    const EXAMPLE_GOOD = {
+      "name": "search_repositories",
+      "description": "Searches for GitHub repositories matching a query. Useful for finding open-source projects, checking if a repository exists, or discovering trending repos. Returns repository name, description, stars, language, and URL.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "Search query (supports GitHub search syntax)" },
+          "sort": { "type": "string", "description": "Sort field", "enum": ["stars", "forks", "updated"], "default": "stars" },
+          "per_page": { "type": "integer", "description": "Results per page (max 100)", "default": 10 }
+        },
+        "required": ["query"]
+      }
+    };
+
+    const EXAMPLE_BAD = {
+      "name": "get",
+      "description": "gets data from the api",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "format": { "type": "string" }
+        }
+      }
+    };
+
     function scoreToolBrowser(tool) {
       let issues = [];
       let scores = { findability: 0, clarity: 0, precision: 0, efficiency: 0 };
-      
       const name = tool.name || 'unknown';
       const desc = tool.description || '';
       const schema = tool.inputSchema || tool.input_schema || {};
       const props = schema.properties || {};
       const required = schema.required || [];
-      
-      // --- Clarity ---
-      let clarityTotal = 0;
-      let clarityMax = 6;
-      
-      // Has description?
+
+      // Clarity
+      let cT = 0, cM = 6;
       if (!desc.trim()) {
-        issues.push({ dim: 'clarity', sev: 'critical', msg: 'No description', fix: 'Add a description explaining purpose, usage, and return value', impact: 15 });
+        issues.push({ dim: 'clarity', sev: 'critical', msg: 'No description', fix: 'Add a description with purpose, usage context, and return value', impact: 15 });
       } else {
-        clarityTotal += 1;
-        // Length check
-        if (desc.length < 20) {
-          issues.push({ dim: 'clarity', sev: 'critical', msg: `Description too short (${desc.length} chars)`, fix: 'Expand to 80-200 chars with purpose and context', impact: 10 });
-        } else if (desc.length >= 80 && desc.length <= 250) {
-          clarityTotal += 1;
-        } else if (desc.length >= 50) {
-          clarityTotal += 0.7;
-        } else {
-          clarityTotal += 0.3;
-          issues.push({ dim: 'clarity', sev: 'warning', msg: `Description short (${desc.length} chars)`, fix: 'Add usage context. 80-200 chars is optimal', impact: 5 });
-        }
-        
-        // Purpose statement?
-        const descLower = desc.toLowerCase().trim();
-        if (/^(get|set|create|update|delete|search|find|list|fetch|send|this tool|retriev|return|provid|allow|enabl|perform)/.test(descLower)) {
-          clarityTotal += 1;
-        } else {
-          clarityTotal += 0.5;
-          issues.push({ dim: 'clarity', sev: 'warning', msg: 'No clear purpose verb at start', fix: "Start with 'Creates...', 'Retrieves...', or 'This tool...'", impact: 5 });
-        }
-        
-        // Usage context?
-        if (/use this|when|useful for|ideal for|designed for|helps|allows|enables|for example/.test(descLower)) {
-          clarityTotal += 1;
-        } else {
-          clarityTotal += 0.4;
-          issues.push({ dim: 'clarity', sev: 'warning', msg: 'No usage context', fix: "Add 'Use this when...' to help agents decide", impact: 6 });
-        }
-        
-        // Returns mentioned?
-        if (/returns?|outputs?|produces|yields|responds with|result|provides|generates/.test(descLower)) {
-          clarityTotal += 1;
-        } else {
-          clarityTotal += 0.5;
-          issues.push({ dim: 'clarity', sev: 'info', msg: 'No return value described', fix: "Add 'Returns...' to describe output", impact: 3 });
-        }
-        
-        // Name-desc alignment
-        const nameParts = name.toLowerCase().split(/[_\-]/).filter(p => p.length > 2);
-        const matchCount = nameParts.filter(p => descLower.includes(p)).length;
-        if (nameParts.length > 0 && matchCount / nameParts.length >= 0.5) {
-          clarityTotal += 1;
-        } else {
-          clarityTotal += 0.5;
-        }
+        cT += 1;
+        if (desc.length < 20) { cT += 0.2; issues.push({ dim: 'clarity', sev: 'critical', msg: `Description too short (${desc.length} chars)`, fix: 'Expand to 80-200 chars', impact: 10 }); }
+        else if (desc.length >= 80 && desc.length <= 250) { cT += 1; }
+        else if (desc.length >= 50) { cT += 0.7; if (desc.length < 80) issues.push({ dim: 'clarity', sev: 'warning', msg: `Description short (${desc.length} chars)`, fix: '80-200 chars is optimal', impact: 5 }); }
+        else { cT += 0.3; issues.push({ dim: 'clarity', sev: 'warning', msg: `Description short (${desc.length} chars)`, fix: '80-200 chars is optimal', impact: 5 }); }
+        const dl = desc.toLowerCase().trim();
+        if (/^(get|set|create|update|delete|search|find|list|fetch|send|this tool|retriev|return|provid|allow|enabl|perform|analyz|generat|scor|compar)/.test(dl)) cT += 1;
+        else { cT += 0.5; issues.push({ dim: 'clarity', sev: 'warning', msg: 'No clear purpose verb', fix: "Start with 'Creates...', 'Searches for...'", impact: 5 }); }
+        if (/use this|when|useful for|ideal for|designed for|helps|allows|enables|for example/.test(dl)) cT += 1;
+        else { cT += 0.4; issues.push({ dim: 'clarity', sev: 'warning', msg: 'No usage context', fix: "Add 'Use this when...'", impact: 6 }); }
+        if (/returns?|outputs?|produces|yields|result|response|provides|generates/.test(dl)) cT += 1;
+        else { cT += 0.5; issues.push({ dim: 'clarity', sev: 'info', msg: 'No return value described', fix: "Add 'Returns...'", impact: 3 }); }
+        const np = name.toLowerCase().split(/[_\-]/).filter(p => p.length > 2);
+        const mc = np.filter(p => dl.includes(p)).length;
+        cT += (np.length > 0 && mc / np.length >= 0.5) ? 1 : 0.5;
       }
-      
-      scores.clarity = Math.round((clarityTotal / clarityMax) * 35 * 10) / 10;
-      
-      // --- Precision ---
-      let precisionTotal = 0;
-      let precisionMax = 5;
-      
-      if (!schema || !schema.type) {
-        issues.push({ dim: 'precision', sev: 'critical', msg: 'No input schema', fix: 'Add inputSchema with type definitions', impact: 12 });
-      } else {
-        precisionTotal += 1;
-        
-        const propKeys = Object.keys(props);
-        if (propKeys.length > 0) {
-          // Type definitions
-          const missingTypes = propKeys.filter(k => !props[k].type);
-          if (missingTypes.length === 0) precisionTotal += 1;
-          else {
-            precisionTotal += Math.max(0, 1 - missingTypes.length / propKeys.length);
-            issues.push({ dim: 'precision', sev: 'warning', msg: `Missing types: ${missingTypes.join(', ')}`, fix: "Add 'type' to each parameter", impact: 4 });
-          }
-          
-          // Descriptions
-          const missingDesc = propKeys.filter(k => !props[k].description);
-          if (missingDesc.length === 0) precisionTotal += 1;
-          else {
-            precisionTotal += Math.max(0, 1 - missingDesc.length / propKeys.length);
-            issues.push({ dim: 'precision', sev: 'warning', msg: `Missing param descriptions: ${missingDesc.join(', ')}`, fix: "Add 'description' to each parameter", impact: 5 });
-          }
-          
-          // Required fields
-          if (required.length > 0) precisionTotal += 1;
-          else {
-            precisionTotal += 0.5;
-            issues.push({ dim: 'precision', sev: 'info', msg: 'No required fields defined', fix: "Add 'required' array for mandatory params", impact: 3 });
-          }
-          
-          // Enums
-          precisionTotal += 1; // simplified
-        } else {
-          precisionTotal += 2; // no params might be valid
-        }
+      scores.clarity = Math.round((cT / cM) * 35 * 10) / 10;
+
+      // Precision
+      let pT = 0, pM = 5;
+      if (!schema.type) { issues.push({ dim: 'precision', sev: 'critical', msg: 'No input schema', fix: 'Add inputSchema with type definitions', impact: 12 }); }
+      else {
+        pT += 1;
+        const pk = Object.keys(props);
+        if (pk.length > 0) {
+          const mt = pk.filter(k => !props[k].type);
+          pT += mt.length === 0 ? 1 : Math.max(0, 1 - mt.length / pk.length);
+          if (mt.length > 0) issues.push({ dim: 'precision', sev: 'warning', msg: `Missing types: ${mt.join(', ')}`, fix: "Add 'type' to each parameter", impact: 4 });
+          const md = pk.filter(k => !props[k].description);
+          pT += md.length === 0 ? 1 : Math.max(0, 1 - md.length / pk.length);
+          if (md.length > 0) issues.push({ dim: 'precision', sev: 'warning', msg: `Missing descriptions: ${md.join(', ')}`, fix: "Add 'description' to each param", impact: 5 });
+          pT += required.length > 0 ? 1 : 0.5;
+          if (required.length === 0 && pk.length > 0) issues.push({ dim: 'precision', sev: 'info', msg: 'No required fields', fix: "Add 'required' array", impact: 3 });
+          pT += 1;
+        } else { pT += 2; }
       }
-      
-      scores.precision = Math.round((precisionTotal / precisionMax) * 25 * 10) / 10;
-      
-      // --- Efficiency ---
-      const tokenEst = JSON.stringify(tool).length / 4;
-      let effScore = tokenEst > 2000 ? 0.3 : tokenEst > 1000 ? 0.6 : tokenEst > 500 ? 0.8 : 1.0;
-      if (tokenEst > 1000) {
-        issues.push({ dim: 'efficiency', sev: 'warning', msg: `~${Math.round(tokenEst)} tokens estimated`, fix: 'Create a compact variant', impact: 3 });
-      }
-      
-      // Name format
-      if (!/^[a-z][a-zA-Z0-9_]*$/.test(name)) {
-        effScore -= 0.15;
-        issues.push({ dim: 'efficiency', sev: 'warning', msg: `Name '${name}' not snake_case/camelCase`, fix: 'Use snake_case or camelCase', impact: 3 });
-      }
-      if (['run','execute','do','action','tool','function','process','handle'].includes(name.toLowerCase())) {
-        effScore -= 0.15;
-        issues.push({ dim: 'efficiency', sev: 'warning', msg: `Name '${name}' is too generic`, fix: 'Use specific name like search_users', impact: 5 });
-      }
-      
-      scores.efficiency = Math.round(Math.max(0, effScore) * 15 * 10) / 10;
-      
-      // --- Findability (limited without registry) ---
-      let findScore = 0.5; // default without registry data
-      if (name.length < 4) {
-        findScore = 0.3;
-        issues.push({ dim: 'findability', sev: 'warning', msg: `Name '${name}' too short for search`, fix: 'Use longer, descriptive name', impact: 4 });
-      } else {
-        findScore = 0.8;
-      }
-      scores.findability = Math.round(findScore * 25 * 10) / 10;
-      
+      scores.precision = Math.round((pT / pM) * 25 * 10) / 10;
+
+      // Efficiency
+      const te = JSON.stringify(tool).length / 4;
+      let ef = te > 2000 ? 0.3 : te > 1000 ? 0.6 : te > 500 ? 0.8 : 1.0;
+      if (te > 1000) issues.push({ dim: 'efficiency', sev: 'warning', msg: `~${Math.round(te)} tokens`, fix: 'Create a compact variant', impact: 3 });
+      if (!/^[a-z][a-zA-Z0-9_]*$/.test(name)) { ef -= 0.15; issues.push({ dim: 'efficiency', sev: 'warning', msg: `Name '${name}' not snake_case`, fix: 'Use snake_case', impact: 3 }); }
+      if (['run','execute','do','action','tool','function','process','handle'].includes(name.toLowerCase())) { ef -= 0.15; issues.push({ dim: 'efficiency', sev: 'warning', msg: `Name '${name}' too generic`, fix: 'Use specific name', impact: 5 }); }
+      scores.efficiency = Math.round(Math.max(0, ef) * 15 * 10) / 10;
+
+      // Findability
+      let fr = name.length < 4 ? 0.3 : 0.8;
+      if (name.length < 4) issues.push({ dim: 'findability', sev: 'warning', msg: `Name '${name}' too short`, fix: 'Use longer name', impact: 4 });
+      scores.findability = Math.round(fr * 25 * 10) / 10;
+
       const total = Math.round((scores.findability + scores.clarity + scores.precision + scores.efficiency) * 10) / 10;
-      
       let level, levelName;
       if (total >= 85) { level = 4; levelName = 'Dominant'; }
       else if (total >= 70) { level = 3; levelName = 'Preferred'; }
       else if (total >= 50) { level = 2; levelName = 'Selectable'; }
       else if (total >= 25) { level = 1; levelName = 'Visible'; }
       else { level = 0; levelName = 'Absent'; }
-      
-      return {
-        name,
-        total,
-        level,
-        levelName,
-        scores,
-        issues: issues.sort((a, b) => b.impact - a.impact),
-      };
+
+      return { name, total, level, levelName, scores, issues: issues.sort((a, b) => b.impact - a.impact) };
     }
 
-    // UI Logic
     const app = document.getElementById('score-app');
-    
-    const exampleJson = JSON.stringify({
-      "name": "get_weather",
-      "description": "Get the current weather for a location",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "location": { "type": "string" }
-        },
-        "required": ["location"]
-      }
-    }, null, 2);
 
     app.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div>
-          <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem;">
-            Paste your MCP tool definition (JSON)
-          </label>
-          <textarea id="tool-input" rows="12" placeholder='${exampleJson.replace(/'/g, "&#39;")}'
-            style="width: 100%; padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
-            border: 1px solid var(--border); border-radius: var(--r);
-            background: var(--bg-s); color: var(--fg); resize: vertical;
-            line-height: 1.5;"></textarea>
-          <p style="font-size: 0.75rem; color: var(--fg-4); margin-top: 0.25rem;">
-            Supports single tool or {"tools": [...]} server format
-          </p>
+      <div>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <button id="btn-good" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try good example</button>
+          <button id="btn-bad" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try bad example</button>
         </div>
+        <textarea id="tool-input" rows="10" placeholder='Paste your tool definition JSON here...'
+          style="width: 100%; padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
+          border: 1px solid var(--border); border-radius: var(--r);
+          background: var(--bg-s); color: var(--fg); resize: vertical;
+          line-height: 1.5;"></textarea>
         <button id="score-btn" onclick="runScore()"
-          style="align-self: flex-start; padding: 0.65rem 1.5rem; background: var(--accent);
-          color: white; border: none; border-radius: var(--r); font-weight: 600;
-          font-size: 0.85rem; cursor: pointer;">
+          style="margin-top: 0.75rem; padding: 0.7rem 1.75rem; background: var(--accent);
+          color: #fff; border: none; border-radius: var(--r); font-weight: 600;
+          font-size: 0.9rem; cursor: pointer; width: 100%;">
           Score
         </button>
-        <div id="results"></div>
+        <div id="results" style="margin-top: 1.5rem;"></div>
       </div>
     `;
+
+    document.getElementById('btn-good').onclick = () => {
+      document.getElementById('tool-input').value = JSON.stringify(EXAMPLE_GOOD, null, 2);
+    };
+    document.getElementById('btn-bad').onclick = () => {
+      document.getElementById('tool-input').value = JSON.stringify(EXAMPLE_BAD, null, 2);
+    };
 
     function runScore() {
       const input = document.getElementById('tool-input').value.trim();
       const results = document.getElementById('results');
-      
-      if (!input) {
-        results.innerHTML = '<p style="color: var(--err); font-size: 0.85rem;">Paste a tool definition JSON to score.</p>';
-        return;
-      }
-      
+      if (!input) { results.innerHTML = '<p style="color:var(--err);font-size:0.85rem;">Paste a tool definition JSON to score.</p>'; return; }
       let data;
-      try {
-        data = JSON.parse(input);
-      } catch (e) {
-        results.innerHTML = `<p style="color: var(--err); font-size: 0.85rem;">Invalid JSON: ${e.message}</p>`;
-        return;
-      }
-      
-      let tools;
-      if (data.tools) {
-        tools = data.tools;
-      } else if (Array.isArray(data)) {
-        tools = data;
-      } else {
-        tools = [data];
-      }
-      
-      const scores = tools.map(t => scoreToolBrowser(t));
-      const avg = scores.reduce((s, t) => s + t.total, 0) / scores.length;
-      
-      const sevColors = { critical: 'var(--err)', warning: 'var(--warn)', info: 'var(--fg-4)' };
-      const sevIcons = { critical: '✗', warning: '⚠', info: 'ℹ' };
-      const levelColors = ['var(--err)', 'var(--warn)', 'var(--fg-2)', 'var(--ok)', 'var(--accent)'];
-      
-      let html = `
-        <div style="padding: 1.5rem; border: 2px solid var(--accent); border-radius: var(--r); margin-bottom: 1.5rem; background: color-mix(in srgb, var(--accent) 5%, transparent);">
-          <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.5rem;">
+      try { data = JSON.parse(input); } catch (e) { results.innerHTML = `<p style="color:var(--err);font-size:0.85rem;">Invalid JSON: ${e.message}</p>`; return; }
+
+      let tools = data.tools ? data.tools : Array.isArray(data) ? data : [data];
+      const scored = tools.map(t => scoreToolBrowser(t));
+      const avg = scored.reduce((s, t) => s + t.total, 0) / scored.length;
+
+      const sevC = { critical: 'var(--err)', warning: 'var(--warn)', info: 'var(--fg-4)' };
+      const sevI = { critical: '✗', warning: '⚠', info: 'ℹ' };
+      const lvlC = ['var(--err)', 'var(--warn)', 'var(--fg-3)', 'var(--ok)', 'var(--accent)'];
+
+      let h = `
+        <div style="padding: 1.5rem; border: 2px solid var(--accent); border-radius: var(--r); margin-bottom: 1.5rem; background: var(--accent-s);">
+          <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem;">
             <span style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${Math.round(avg)}</span>
             <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
           </div>
-          <p style="font-size: 0.85rem; color: var(--fg-2);">${scores.length} tool${scores.length > 1 ? 's' : ''} analyzed</p>
-        </div>
-      `;
-      
-      for (const ts of scores) {
-        const pct = Math.round(ts.total);
-        html += `
+          <p style="font-size: 0.8rem; color: var(--fg-2);">${scored.length} tool${scored.length > 1 ? 's' : ''} analyzed</p>
+        </div>`;
+
+      for (const ts of scored) {
+        h += `
           <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3 style="font-size: 1rem; font-weight: 600; font-family: var(--mono);">${ts.name}</h3>
-              <span style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--bg-s); color: ${levelColors[ts.level]}; font-weight: 500;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <h3 style="font-size: 0.95rem; font-weight: 600; font-family: var(--mono);">${ts.name}</h3>
+              <span style="font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--bg-s); color: ${lvlC[ts.level]}; font-weight: 500;">
                 Level ${ts.level}: ${ts.levelName}
               </span>
             </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
               ${['findability', 'clarity', 'precision', 'efficiency'].map(dim => {
                 const max = dim === 'clarity' ? 35 : dim === 'efficiency' ? 15 : 25;
                 const val = ts.scores[dim];
-                const pctDim = Math.round((val / max) * 100);
-                return `
-                  <div style="text-align: center;">
-                    <div style="font-size: 1.25rem; font-weight: 600;">${val}</div>
-                    <div style="font-size: 0.65rem; color: var(--fg-4); text-transform: capitalize;">${dim} / ${max}</div>
-                    <div style="height: 3px; background: var(--border); border-radius: 2px; margin-top: 0.35rem;">
-                      <div style="height: 100%; width: ${pctDim}%; background: var(--accent); border-radius: 2px;"></div>
-                    </div>
+                const pct = Math.round((val / max) * 100);
+                return `<div style="text-align: center;">
+                  <div style="font-size: 1.1rem; font-weight: 600;">${val}</div>
+                  <div style="font-size: 0.6rem; color: var(--fg-4); text-transform: capitalize;">${dim} / ${max}</div>
+                  <div style="height: 3px; background: var(--border); border-radius: 2px; margin-top: 0.3rem;">
+                    <div style="height: 100%; width: ${pct}%; background: var(--accent); border-radius: 2px;"></div>
                   </div>
-                `;
+                </div>`;
               }).join('')}
             </div>
-            
             ${ts.issues.length > 0 ? `
               <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
                 ${ts.issues.map(i => `
-                  <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.8rem;">
-                    <span style="color: ${sevColors[i.sev]}; flex-shrink: 0;">${sevIcons[i.sev]}</span>
+                  <div style="display: flex; gap: 0.4rem; margin-bottom: 0.5rem; font-size: 0.775rem;">
+                    <span style="color: ${sevC[i.sev]}; flex-shrink: 0;">${sevI[i.sev]}</span>
                     <div>
                       <span style="color: var(--fg);">${i.msg}</span>
                       <span style="color: var(--fg-4);"> — ${i.fix}</span>
-                      <span style="color: var(--accent); font-size: 0.7rem;"> +${i.impact}pt</span>
+                      <span style="color: var(--accent); font-size: 0.65rem;"> +${i.impact}pt</span>
                     </div>
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="font-size: 0.85rem; color: var(--ok);">No issues found.</p>'}
-          </div>
-        `;
+            ` : '<p style="font-size: 0.8rem; color: var(--ok);">No issues found.</p>'}
+          </div>`;
       }
-      
-      results.innerHTML = html;
+
+      // Post-result CTAs
+      h += `
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;">
+          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Next steps</p>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            ${avg >= 85 ? `<a href="/badge" style="font-size: 0.8rem; color: var(--accent);">Add a ToolRank badge to your README →</a>` : ''}
+            ${avg < 85 ? `<a href="/framework" style="font-size: 0.8rem; color: var(--accent);">Learn the ATO framework to improve your score →</a>` : ''}
+            <a href="/ranking" style="font-size: 0.8rem; color: var(--accent);">See how you compare in the ecosystem ranking →</a>
+          </div>
+        </div>`;
+
+      results.innerHTML = h;
     }
   </script>
 </Layout>
