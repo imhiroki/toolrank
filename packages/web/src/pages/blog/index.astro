@@ -1,0 +1,47 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+  .filter(post => !post.data.draft)
+  .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+---
+
+<Layout
+  title="Blog"
+  description="ATO insights, MCP ecosystem analysis, and agent tool optimization strategies. Data-driven articles updated daily."
+>
+  <section style="padding: 3rem 0 1.5rem;">
+    <div class="container" style="max-width: 720px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Blog</h1>
+      <p style="color: var(--color-text-secondary); font-size: 0.9rem;">
+        ATO insights and MCP ecosystem analysis.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 4rem;">
+    <div class="container" style="max-width: 720px;">
+      {posts.length > 0 ? (
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+          {posts.map(post => (
+            <a href={`/blog/${post.id}`} style="display: block; padding: 1.25rem; border: 1px solid var(--color-border); border-radius: var(--radius); text-decoration: none; transition: border-color 0.15s;">
+              <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--color-text); margin-bottom: 0.25rem;">
+                {post.data.title}
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-bottom: 0.5rem;">
+                {post.data.description}
+              </p>
+              <p style="font-size: 0.75rem; color: var(--color-text-tertiary);">
+                {new Date(post.data.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                {post.data.author && ` · ${post.data.author}`}
+              </p>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p style="color: var(--color-text-tertiary); font-size: 0.9rem;">No posts yet.</p>
+      )}
+    </div>
+  </section>
+</Layout>
