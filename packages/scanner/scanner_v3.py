@@ -324,6 +324,16 @@ def run_scan(limit: int = None, dry_run: bool = False, use_supabase: bool = Fals
     else:
         targets = servers
 
+    # Dedup targets by qualifiedName
+    seen_qnames = set()
+    unique_targets = []
+    for s in targets:
+        qn = s.get("qualifiedName", "")
+        if qn and qn not in seen_qnames:
+            seen_qnames.add(qn)
+            unique_targets.append(s)
+    targets = unique_targets
+
     # Step 3: Fetch details and score
     log.info(f"Step 2: Scoring {len(targets)} servers (interval: {BASE_DELAY}s)...")
     estimated_minutes = len(targets) * BASE_DELAY / 60
@@ -364,6 +374,14 @@ def run_scan(limit: int = None, dry_run: bool = False, use_supabase: bool = Fals
                 log.info(f"Merged: {scored} new + {len(existing)} existing = {len(results)} total")
             except Exception:
                 pass
+
+    # Dedup by server_name (same server can appear multiple times)
+    dedup_map = {}
+    for r in results:
+        key = r["server_name"]
+        if key not in dedup_map or r["average_score"] > dedup_map[key]["average_score"]:
+            dedup_map[key] = r
+    results = list(dedup_map.values())
 
     # Build summary
     avg_score = round(sum(r["average_score"] for r in results) / len(results), 1) if results else 0

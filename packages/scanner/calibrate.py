@@ -211,7 +211,21 @@ def main():
     print(f"\nReport saved: {report_file}")
     
     if args.apply:
-        log.warning("Auto-apply is Phase 2. For now, review and manually update weights in toolrank_score.py")
+        weights_file = Path(__file__).parent.parent / "scoring" / "weights.json"
+        new_weights = report["recommended_weights"]
+        with open(weights_file, "w") as f:
+            json.dump({
+                "findability": new_weights["findability"],
+                "clarity": new_weights["clarity"],
+                "precision": new_weights["precision"],
+                "efficiency": new_weights["efficiency"],
+                "updated_at": datetime.now().isoformat(),
+                "sample_size": report["sample_size"],
+                "correlations": report["correlations"],
+            }, f, indent=2)
+        log.info(f"Weights applied: {weights_file}")
+        print(f"\nWeights written to {weights_file}")
+        print("Next scan will use updated weights.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+{
+  "findability": 25,
+  "clarity": 35,
+  "precision": 25,
+  "efficiency": 15,
+  "updated_at": "2026-03-28T00:00:00",
+  "note": "Default weights. Updated automatically by calibrate.py --apply"
+}

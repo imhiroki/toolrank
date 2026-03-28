@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const plans = [
+  {
+    name: 'Free',
+    price: '$0',
+    period: 'forever',
+    features: ['5 score diagnoses / month', 'Level A scoring (rule-based)', 'Public ranking access', 'Badge (static)', 'Open source engine'],
+    cta: 'Get started',
+    ctaLink: '/score',
+    accent: false,
+  },
+  {
+    name: 'Pro',
+    price: '$29',
+    period: '/month',
+    features: ['Unlimited diagnoses', 'Level C scoring (Claude AI)', 'Dynamic badges with live score', 'Weekly score reports', 'API access (1,000 calls/mo)', 'Priority support'],
+    cta: 'Coming soon',
+    ctaLink: '#',
+    accent: true,
+  },
+  {
+    name: 'Team',
+    price: '$99',
+    period: '/month',
+    features: ['Everything in Pro', 'Up to 10 team members', 'API access (10,000 calls/mo)', 'Custom scoring rules', 'Webhook notifications', 'Slack integration'],
+    cta: 'Coming soon',
+    ctaLink: '#',
+    accent: false,
+  },
+];
+---
+
+<Layout
+  title="Pricing"
+  description="ToolRank pricing plans. Free tier for scoring and diagnostics. Pro and Team plans for advanced AI-powered scoring and monitoring."
+>
+  <section style="padding: 3rem 0 1rem; text-align: center;">
+    <div class="w" style="max-width: 720px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Pricing</h1>
+      <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.7;">
+        Start free. Upgrade when you need AI-powered scoring and monitoring.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 1rem 0 4rem;">
+    <div class="w">
+      <div class="grid-3" style="max-width: 900px; margin: 0 auto; align-items: start;">
+        {plans.map(plan => (
+          <div style={`padding: 1.5rem; border: ${plan.accent ? '2px solid var(--accent)' : '1px solid var(--border)'}; border-radius: var(--r); ${plan.accent ? 'background: var(--accent-s);' : ''}`}>
+            {plan.accent && <p style="font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); margin-bottom: 0.75rem;">Most popular</p>}
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">{plan.name}</h3>
+            <div style="margin-bottom: 1rem;">
+              <span style="font-size: 2rem; font-weight: 700;">{plan.price}</span>
+              <span style="font-size: 0.8rem; color: var(--fg-3);">{plan.period}</span>
+            </div>
+            <ul style="list-style: none; padding: 0; margin-bottom: 1.5rem;">
+              {plan.features.map(f => (
+                <li style="font-size: 0.8rem; color: var(--fg-2); padding: 0.3rem 0; display: flex; align-items: flex-start; gap: 0.4rem;">
+                  <span style="color: var(--accent); flex-shrink: 0;">✓</span> {f}
+                </li>
+              ))}
+            </ul>
+            <a href={plan.ctaLink}
+              style={`display: block; text-align: center; padding: 0.65rem; border-radius: var(--r); font-weight: 600; font-size: 0.85rem; text-decoration: none; ${plan.accent ? 'background: var(--accent); color: #fff;' : 'border: 1px solid var(--border); color: var(--fg);'}`}>
+              {plan.cta}
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 3rem;">
+    <div class="w" style="max-width: 640px; text-align: center;">
+      <p style="font-size: 0.8rem; color: var(--fg-4); line-height: 1.7;">
+        Need more? Enterprise plans start at $499/month with unlimited API, custom integrations, and ATO consulting.
+        <a href="mailto:hello@toolrank.dev">Contact us</a>.
+      </p>
+    </div>
+  </section>
+</Layout>

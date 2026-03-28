@@ -42,21 +42,47 @@ DATA_DIR = Path(__file__).parent.parent / "scanner" / "data"
 
 
 def load_scan_data() -> dict:
-    """Load latest scan summary and scores."""
+    """Load latest scan summary and scores (local files or Supabase)."""
     summary_file = DATA_DIR / "latest_summary.json"
     scores_file = DATA_DIR / "latest_scores.json"
-    
+
     summary = {}
     scores = []
-    
+
+    # Try local files first
     if summary_file.exists():
         with open(summary_file) as f:
             summary = json.load(f)
-    
     if scores_file.exists():
         with open(scores_file) as f:
             scores = json.load(f)
-    
+
+    # Fallback to Supabase if no local data
+    if not scores:
+        try:
+            from supabase import create_client
+            url = os.environ.get("SUPABASE_URL")
+            key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
+            if url and key:
+                db = create_client(url, key)
+                # Read from latest_scores view (scores joined with servers)
+                resp = db.table("latest_scores").select("*").order("total_score", desc=True).limit(200).execute()
+                if resp.data:
+                    scores = [{
+                        "server_name": s["server_name"],
+                        "display_name": s.get("display_name", ""),
+                        "average_score": s.get("total_score", 0),
+                        "tools": [],  # Not needed for article generation
+                        "use_count": 0,
+                    } for s in resp.data]
+                    log.info(f"Loaded {len(scores)} scores from Supabase")
+                # Get summary
+                sum_resp = db.table("scan_summaries").select("*").order("scan_date", desc=True).limit(1).execute()
+                if sum_resp.data:
+                    summary = sum_resp.data[0].get("raw_summary", {})
+        except Exception as e:
+            log.warning(f"Supabase fallback failed: {e}")
+
     return {"summary": summary, "scores": scores}
 
 

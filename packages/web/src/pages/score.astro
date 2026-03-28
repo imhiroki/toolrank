@@ -4,38 +4,87 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout
   title="Score Your Tools"
-  description="Get your free ToolRank Score. Paste your MCP tool definition and see how AI agents evaluate your tools across Findability, Clarity, Precision, and Efficiency."
+  description="Get your free ToolRank Score. Enter your MCP server name or paste JSON. See how AI agents evaluate your tools across Findability, Clarity, Precision, and Efficiency."
 >
   <section style="padding: 3rem 0 1rem;">
     <div class="w" style="max-width: 720px;">
       <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Score your tools</h1>
       <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.7;">
-        Paste your MCP tool definition JSON and get your ToolRank Score instantly.
-        The score measures how likely AI agents are to discover and select your tools.
+        Enter your Smithery server name or paste your tool definition JSON.
+        Get your ToolRank Score instantly with specific improvements.
       </p>
-    </div>
-  </section>
-
-  <section style="padding: 0 0 1.5rem;">
-    <div class="w" style="max-width: 720px;">
-      <details style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.875rem 1rem; margin-bottom: 1.5rem;">
-        <summary style="cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--fg-3);">Where do I find my tool definition JSON?</summary>
-        <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--fg-2); line-height: 1.7;">
-          <p style="margin-bottom: 0.5rem;">Your MCP tool definition is in your server's source code — the object you pass to <code>server.tool()</code> or the <code>tools</code> array in your MCP server config.</p>
-          <p style="margin-bottom: 0.5rem;">It looks like this: <code>{'{"name": "...", "description": "...", "inputSchema": {...}}'}</code></p>
-          <p>You can also paste an entire server response with <code>{'{"tools": [...]}'}</code> to score all tools at once.</p>
-        </div>
-      </details>
     </div>
   </section>
 
   <section style="padding: 0 0 4rem;">
     <div class="w" style="max-width: 720px;">
-      <div id="score-app"></div>
+      <div id="score-app">
+        <!-- Tab switcher -->
+        <div style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem;">
+          <button class="tab active" data-tab="lookup" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; background: none; border: none; cursor: pointer; color: var(--accent); border-bottom: 2px solid var(--accent); margin-bottom: -2px;">Server lookup</button>
+          <button class="tab" data-tab="json" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500; background: none; border: none; cursor: pointer; color: var(--fg-4); border-bottom: 2px solid transparent; margin-bottom: -2px;">Paste JSON</button>
+        </div>
+
+        <!-- Tab: Server lookup -->
+        <div id="tab-lookup">
+          <label style="font-size: 0.8rem; font-weight: 500; color: var(--fg-3); display: block; margin-bottom: 0.4rem;">Smithery server name</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="server-name" placeholder="e.g. brave or microsoft/learn_mcp"
+              style="flex: 1; padding: 0.65rem 0.875rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg-s); color: var(--fg); outline: none;" />
+            <button onclick="lookupServer()" id="lookup-btn"
+              style="padding: 0.65rem 1.25rem; background: var(--accent); color: #fff; border: none; border-radius: var(--r); font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">
+              Score
+            </button>
+          </div>
+          <p style="font-size: 0.7rem; color: var(--fg-4); margin-top: 0.4rem;">
+            Fetches tool definitions from Smithery registry and scores them.
+            <a href="https://smithery.ai" target="_blank" style="color: var(--fg-4); text-decoration: underline;">Find your server →</a>
+          </p>
+          <div id="lookup-status" style="margin-top: 0.75rem;"></div>
+        </div>
+
+        <!-- Tab: JSON paste -->
+        <div id="tab-json" style="display: none;">
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+            <button onclick="loadExample('good')" style="padding: 0.35rem 0.65rem; font-size: 0.7rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try good example</button>
+            <button onclick="loadExample('bad')" style="padding: 0.35rem 0.65rem; font-size: 0.7rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try bad example</button>
+          </div>
+          <textarea id="tool-input" rows="10" placeholder='Paste your tool definition JSON here...'
+            style="width: 100%; padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
+            border: 1px solid var(--border); border-radius: var(--r);
+            background: var(--bg-s); color: var(--fg); resize: vertical;
+            line-height: 1.5;"></textarea>
+          <button onclick="scoreJSON()"
+            style="margin-top: 0.75rem; padding: 0.7rem 1.75rem; background: var(--accent);
+            color: #fff; border: none; border-radius: var(--r); font-weight: 600;
+            font-size: 0.9rem; cursor: pointer; width: 100%;">
+            Score
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" style="margin-top: 1.5rem;"></div>
+      </div>
     </div>
   </section>
 
   <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => {
+          t.style.color = 'var(--fg-4)';
+          t.style.borderBottom = '2px solid transparent';
+          t.style.fontWeight = '500';
+        });
+        tab.style.color = 'var(--accent)';
+        tab.style.borderBottom = '2px solid var(--accent)';
+        tab.style.fontWeight = '600';
+        document.getElementById('tab-lookup').style.display = tab.dataset.tab === 'lookup' ? 'block' : 'none';
+        document.getElementById('tab-json').style.display = tab.dataset.tab === 'json' ? 'block' : 'none';
+      });
+    });
+
     const EXAMPLE_GOOD = {
       "name": "search_repositories",
       "description": "Searches for GitHub repositories matching a query. Useful for finding open-source projects, checking if a repository exists, or discovering trending repos. Returns repository name, description, stars, language, and URL.",
@@ -53,14 +102,63 @@ import Layout from '../layouts/Layout.astro';
     const EXAMPLE_BAD = {
       "name": "get",
       "description": "gets data from the api",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "id": { "type": "string" },
-          "format": { "type": "string" }
-        }
-      }
+      "inputSchema": { "type": "object", "properties": { "id": { "type": "string" }, "format": { "type": "string" } } }
     };
+
+    function loadExample(type) {
+      document.getElementById('tool-input').value = JSON.stringify(type === 'good' ? EXAMPLE_GOOD : EXAMPLE_BAD, null, 2);
+    }
+
+    // Smithery lookup
+    async function lookupServer() {
+      const name = document.getElementById('server-name').value.trim();
+      const status = document.getElementById('lookup-status');
+      if (!name) { status.innerHTML = '<p style="color:var(--err);font-size:0.8rem;">Enter a server name.</p>'; return; }
+
+      const btn = document.getElementById('lookup-btn');
+      btn.textContent = 'Loading...';
+      btn.disabled = true;
+      status.innerHTML = '<p style="font-size:0.8rem;color:var(--fg-3);">Fetching tool definitions from Smithery...</p>';
+
+      try {
+        const resp = await fetch(`https://registry.smithery.ai/servers/${encodeURIComponent(name)}`);
+        if (!resp.ok) throw new Error(`Server not found (${resp.status})`);
+        const data = await resp.json();
+        const tools = data.tools || [];
+
+        if (tools.length === 0) {
+          status.innerHTML = '<p style="color:var(--warn);font-size:0.8rem;">Server found but has no tool definitions exposed. Score cannot be calculated.</p>';
+          btn.textContent = 'Score';
+          btn.disabled = false;
+          return;
+        }
+
+        status.innerHTML = `<p style="font-size:0.8rem;color:var(--ok);">Found ${tools.length} tool${tools.length > 1 ? 's' : ''}. Scoring...</p>`;
+        const scored = tools.map(t => scoreToolBrowser(t));
+        renderResults(scored, data.displayName || name);
+      } catch (e) {
+        status.innerHTML = `<p style="color:var(--err);font-size:0.8rem;">${e.message}. Check the server name on <a href="https://smithery.ai" target="_blank" style="color:var(--err);text-decoration:underline;">smithery.ai</a>.</p>`;
+      }
+      btn.textContent = 'Score';
+      btn.disabled = false;
+    }
+
+    // Enter key triggers lookup
+    document.getElementById('server-name').addEventListener('keydown', e => {
+      if (e.key === 'Enter') lookupServer();
+    });
+
+    // JSON scoring
+    function scoreJSON() {
+      const input = document.getElementById('tool-input').value.trim();
+      const results = document.getElementById('results');
+      if (!input) { results.innerHTML = '<p style="color:var(--err);font-size:0.85rem;">Paste a tool definition JSON.</p>'; return; }
+      let data;
+      try { data = JSON.parse(input); } catch (e) { results.innerHTML = `<p style="color:var(--err);font-size:0.85rem;">Invalid JSON: ${e.message}</p>`; return; }
+      let tools = data.tools ? data.tools : Array.isArray(data) ? data : [data];
+      const scored = tools.map(t => scoreToolBrowser(t));
+      renderResults(scored);
+    }
 
     function scoreToolBrowser(tool) {
       let issues = [];
@@ -138,47 +236,9 @@ import Layout from '../layouts/Layout.astro';
       return { name, total, level, levelName, scores, issues: issues.sort((a, b) => b.impact - a.impact) };
     }
 
-    const app = document.getElementById('score-app');
-
-    app.innerHTML = `
-      <div>
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
-          <button id="btn-good" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try good example</button>
-          <button id="btn-bad" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; font-weight: 500; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-s); color: var(--fg-2); cursor: pointer;">Try bad example</button>
-        </div>
-        <textarea id="tool-input" rows="10" placeholder='Paste your tool definition JSON here...'
-          style="width: 100%; padding: 0.75rem; font-family: var(--mono); font-size: 0.8rem;
-          border: 1px solid var(--border); border-radius: var(--r);
-          background: var(--bg-s); color: var(--fg); resize: vertical;
-          line-height: 1.5;"></textarea>
-        <button id="score-btn" onclick="runScore()"
-          style="margin-top: 0.75rem; padding: 0.7rem 1.75rem; background: var(--accent);
-          color: #fff; border: none; border-radius: var(--r); font-weight: 600;
-          font-size: 0.9rem; cursor: pointer; width: 100%;">
-          Score
-        </button>
-        <div id="results" style="margin-top: 1.5rem;"></div>
-      </div>
-    `;
-
-    document.getElementById('btn-good').onclick = () => {
-      document.getElementById('tool-input').value = JSON.stringify(EXAMPLE_GOOD, null, 2);
-    };
-    document.getElementById('btn-bad').onclick = () => {
-      document.getElementById('tool-input').value = JSON.stringify(EXAMPLE_BAD, null, 2);
-    };
-
-    function runScore() {
-      const input = document.getElementById('tool-input').value.trim();
+    function renderResults(scored, serverLabel) {
       const results = document.getElementById('results');
-      if (!input) { results.innerHTML = '<p style="color:var(--err);font-size:0.85rem;">Paste a tool definition JSON to score.</p>'; return; }
-      let data;
-      try { data = JSON.parse(input); } catch (e) { results.innerHTML = `<p style="color:var(--err);font-size:0.85rem;">Invalid JSON: ${e.message}</p>`; return; }
-
-      let tools = data.tools ? data.tools : Array.isArray(data) ? data : [data];
-      const scored = tools.map(t => scoreToolBrowser(t));
       const avg = scored.reduce((s, t) => s + t.total, 0) / scored.length;
-
       const sevC = { critical: 'var(--err)', warning: 'var(--warn)', info: 'var(--fg-4)' };
       const sevI = { critical: '✗', warning: '⚠', info: 'ℹ' };
       const lvlC = ['var(--err)', 'var(--warn)', 'var(--fg-3)', 'var(--ok)', 'var(--accent)'];
@@ -189,7 +249,7 @@ import Layout from '../layouts/Layout.astro';
             <span style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${Math.round(avg)}</span>
             <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
           </div>
-          <p style="font-size: 0.8rem; color: var(--fg-2);">${scored.length} tool${scored.length > 1 ? 's' : ''} analyzed</p>
+          <p style="font-size: 0.8rem; color: var(--fg-2);">${serverLabel ? serverLabel + ' · ' : ''}${scored.length} tool${scored.length > 1 ? 's' : ''} analyzed</p>
         </div>`;
 
       for (const ts of scored) {
@@ -197,8 +257,8 @@ import Layout from '../layouts/Layout.astro';
           <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
               <h3 style="font-size: 0.95rem; font-weight: 600; font-family: var(--mono);">${ts.name}</h3>
-              <span style="font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--bg-s); color: ${lvlC[ts.level]}; font-weight: 500;">
-                Level ${ts.level}: ${ts.levelName}
+              <span style="font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 100px; background: var(--bg-s); color: ${lvlC[ts.level]}; font-weight: 500;">
+                ${ts.levelName} · ${Math.round(ts.total)}
               </span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1rem;">
@@ -232,14 +292,13 @@ import Layout from '../layouts/Layout.astro';
           </div>`;
       }
 
-      // Post-result CTAs
       h += `
         <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;">
           <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Next steps</p>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            ${avg >= 85 ? `<a href="/badge" style="font-size: 0.8rem; color: var(--accent);">Add a ToolRank badge to your README →</a>` : ''}
-            ${avg < 85 ? `<a href="/framework" style="font-size: 0.8rem; color: var(--accent);">Learn the ATO framework to improve your score →</a>` : ''}
-            <a href="/ranking" style="font-size: 0.8rem; color: var(--accent);">See how you compare in the ecosystem ranking →</a>
+            ${avg >= 85 ? `<a href="/badge" style="font-size: 0.8rem;">Add a ToolRank badge to your README →</a>` : ''}
+            ${avg < 85 ? `<a href="/framework" style="font-size: 0.8rem;">Learn the ATO framework to improve your score →</a>` : ''}
+            <a href="/ranking" style="font-size: 0.8rem;">See how you compare in the ecosystem ranking →</a>
           </div>
         </div>`;
 

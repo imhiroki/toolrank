@@ -1,0 +1,17 @@
+name: toolrank
+displayName: ToolRank
+description: Score and optimize MCP tool definitions for AI agent discovery. Analyze your tools across Findability, Clarity, Precision, and Efficiency to maximize agent selection probability.
+homepage: https://toolrank.dev
+repository: https://github.com/imhiroki/toolrank
+tags:
+  - developer-tools
+  - optimization
+  - scoring
+  - mcp
+  - ato
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: npx -y @toolrank/mcp-server

@@ -18,6 +18,24 @@ import json
 import re
 from dataclasses import dataclass, field
 from typing import Optional
+from pathlib import Path
+
+
+def _load_weights() -> dict:
+    """Load weights from weights.json if available, else use defaults."""
+    weights_file = Path(__file__).parent / "weights.json"
+    defaults = {"findability": 25, "clarity": 35, "precision": 25, "efficiency": 15}
+    if weights_file.exists():
+        try:
+            with open(weights_file) as f:
+                data = json.load(f)
+            return {k: data.get(k, defaults[k]) for k in defaults}
+        except Exception:
+            pass
+    return defaults
+
+
+WEIGHTS = _load_weights()
 
 
 @dataclass
@@ -570,10 +588,10 @@ def score_tool(tool: dict) -> ToolScore:
             issues=dim_issues
         )
     
-    findability = run_checks(FINDABILITY_CHECKS, 25)
-    clarity = run_checks(CLARITY_CHECKS, 35)
-    precision = run_checks(PRECISION_CHECKS, 25)
-    efficiency = run_checks(EFFICIENCY_CHECKS, 15)
+    findability = run_checks(FINDABILITY_CHECKS, WEIGHTS["findability"])
+    clarity = run_checks(CLARITY_CHECKS, WEIGHTS["clarity"])
+    precision = run_checks(PRECISION_CHECKS, WEIGHTS["precision"])
+    efficiency = run_checks(EFFICIENCY_CHECKS, WEIGHTS["efficiency"])
     
     total = findability.score + clarity.score + precision.score + efficiency.score
     total = round(total, 1)
