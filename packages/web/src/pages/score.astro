@@ -234,7 +234,109 @@ import Layout from '../layouts/Layout.astro';
       else if (total >= 25) { level = 1; levelName = 'Visible'; }
       else { level = 0; levelName = 'Absent'; }
 
-      return { name, total, level, levelName, scores, issues: issues.sort((a, b) => b.impact - a.impact) };
+      return { name, total, level, levelName, scores, issues: issues.sort((a, b) => b.impact - a.impact), _raw: tool };
+    }
+
+    // --- Rewrite Suggestion Engine ---
+    function generateRewrite(ts) {
+      const tool = ts._raw || {};
+      const name = ts.name;
+      const desc = tool.description || '';
+      const schema = tool.inputSchema || tool.input_schema || {};
+      const props = schema.properties || {};
+      const required = schema.required || [];
+
+      // Generate improved description
+      let newDesc = desc;
+      const hasVerb = /^(get|set|create|update|delete|search|find|list|fetch|send|retriev|return|provid|allow|enabl|perform|analyz|generat|scor|compar)/i.test(desc.trim());
+      const hasContext = /use this|when|useful for|ideal for|designed for/i.test(desc);
+      const hasReturn = /returns?|outputs?|produces|yields|result|response/i.test(desc);
+
+      if (!desc || desc.length < 30) {
+        // Build description from scratch
+        const nameParts = name.split(/[_\-]/).filter(p => p.length > 1);
+        const verb = nameParts[0] || 'Performs';
+        const action = nameParts.slice(1).join(' ') || 'an operation';
+        newDesc = `${verb.charAt(0).toUpperCase() + verb.slice(1)}s ${action}. Use this when you need to ${action}. Returns the result as structured data.`;
+      } else {
+        if (!hasVerb && !desc.match(/^[A-Z]/)) {
+          newDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+        }
+        if (!hasContext) {
+          newDesc += ` Use this when you need to ${name.replace(/[_\-]/g, ' ')}.`;
+        }
+        if (!hasReturn) {
+          newDesc += ' Returns the result as structured data.';
+        }
+      }
+
+      // Generate improved name
+      let newName = name;
+      if (name.length < 4 || ['get','run','do','action','tool'].includes(name.toLowerCase())) {
+        const descWords = newDesc.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 3);
+        newName = descWords.join('_') || 'perform_action';
+      }
+
+      // Generate improved schema
+      const newProps = {};
+      for (const [k, v] of Object.entries(props)) {
+        newProps[k] = { ...v };
+        if (!v.description) {
+          newProps[k].description = `The ${k} parameter`;
+        }
+      }
+
+      const newRequired = required.length > 0 ? required : Object.keys(props).slice(0, 1);
+
+      // Build display
+      const lines = [];
+      lines.push(`"name": "${newName}",`);
+      lines.push(`"description": "${newDesc}",`);
+      if (Object.keys(newProps).length > 0) {
+        lines.push(`"inputSchema": {`);
+        lines.push(`  "type": "object",`);
+        lines.push(`  "properties": {`);
+        const propEntries = Object.entries(newProps);
+        propEntries.forEach(([k, v], idx) => {
+          const comma = idx < propEntries.length - 1 ? ',' : '';
+          const parts = [`"type": "${v.type || 'string'}"`];
+          if (v.description) parts.push(`"description": "${v.description}"`);
+          if (v.enum) parts.push(`"enum": ${JSON.stringify(v.enum)}`);
+          if (v.default !== undefined) parts.push(`"default": ${JSON.stringify(v.default)}`);
+          lines.push(`    "${k}": { ${parts.join(', ')} }${comma}`);
+        });
+        lines.push(`  },`);
+        lines.push(`  "required": ${JSON.stringify(newRequired)}`);
+        lines.push(`}`);
+      }
+      return lines.map(l => l).join('\n');
+    }
+
+    function generateRewriteJSON(ts) {
+      const tool = ts._raw || {};
+      const desc = tool.description || '';
+      const schema = tool.inputSchema || tool.input_schema || {};
+      const props = schema.properties || {};
+      const required = schema.required || [];
+
+      let newDesc = desc;
+      if (!desc || desc.length < 30) {
+        const parts = ts.name.split(/[_\-]/).filter(p => p.length > 1);
+        newDesc = `${(parts[0] || 'Performs').charAt(0).toUpperCase() + (parts[0] || 'performs').slice(1)}s ${parts.slice(1).join(' ') || 'an operation'}. Use this when you need to ${parts.slice(1).join(' ') || 'perform this action'}. Returns the result as structured data.`;
+      } else {
+        if (!/use this|when|useful for/i.test(desc)) newDesc += ` Use this when you need to ${ts.name.replace(/[_\-]/g, ' ')}.`;
+        if (!/returns?|outputs?/i.test(desc)) newDesc += ' Returns the result as structured data.';
+      }
+
+      const newSchema = { ...schema };
+      if (!newSchema.required && Object.keys(props).length > 0) {
+        newSchema.required = Object.keys(props).slice(0, 1);
+      }
+      for (const [k, v] of Object.entries(props)) {
+        if (!v.description) newSchema.properties[k] = { ...v, description: `The ${k} parameter` };
+      }
+
+      return JSON.stringify({ name: ts.name, description: newDesc, inputSchema: newSchema }, null, 2);
     }
 
     function renderResults(scored, serverLabel) {
@@ -278,6 +380,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
             ${ts.issues.length > 0 ? `
               <div style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+                <p style="font-size: 0.75rem; font-weight: 600; color: var(--fg-3); margin-bottom: 0.5rem;">Issues & fixes</p>
                 ${ts.issues.map(i => `
                   <div style="display: flex; gap: 0.4rem; margin-bottom: 0.5rem; font-size: 0.775rem;">
                     <span style="color: ${sevC[i.sev]}; flex-shrink: 0;">${sevI[i.sev]}</span>
@@ -289,7 +392,18 @@ import Layout from '../layouts/Layout.astro';
                   </div>
                 `).join('')}
               </div>
-            ` : '<p style="font-size: 0.8rem; color: var(--ok);">No issues found.</p>'}
+              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem;">
+                <p style="font-size: 0.75rem; font-weight: 600; color: var(--fg-3); margin-bottom: 0.5rem;">Suggested rewrite</p>
+                <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.75rem; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; overflow-x: auto; white-space: pre-wrap;">${generateRewrite(ts)}</div>
+                <button onclick="navigator.clipboard.writeText(document.querySelector('[data-rewrite=\\'${ts.name}\\']')?.textContent || '');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy rewrite',1500)" style="margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.7rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--fg-3); cursor: pointer;">Copy rewrite</button>
+                <span data-rewrite="${ts.name}" style="display:none;">${generateRewriteJSON(ts)}</span>
+              </div>
+              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem; background: var(--accent-s); padding: 1rem; border-radius: var(--r);">
+                <p style="font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-bottom: 0.3rem;">Level C: AI-Powered Analysis</p>
+                <p style="font-size: 0.7rem; color: var(--fg-3); margin-bottom: 0.5rem;">Get Claude AI to analyze semantic quality, suggest optimal descriptions, and identify context gaps humans miss.</p>
+                <a href="/pricing" style="display: inline-flex; align-items: center; padding: 0.35rem 0.75rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; background: var(--accent); color: #fff; text-decoration: none;">Upgrade to Pro →</a>
+              </div>
+            ` : '<p style="font-size: 0.8rem; color: var(--ok);">No issues found. Your tool definition is well-optimized.</p>'}
           </div>`;
       }
 
