@@ -2,12 +2,23 @@ name: Daily Scan
 
 on:
   schedule:
-    - cron: '0 21 * * *'
+    - cron: '0 21 * * *'  # 06:00 JST daily
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Scan mode'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - full
+          - diff
 
 jobs:
   scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hour max for full scan
     steps:
       - uses: actions/checkout@v4
 
@@ -22,7 +33,15 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: python packages/scanner/scanner_v2.py --supabase
+        run: |
+          MODE="${{ github.event.inputs.mode || 'auto' }}"
+          if [ "$MODE" = "full" ]; then
+            python packages/scanner/scanner_v3.py --supabase --full
+          elif [ "$MODE" = "diff" ]; then
+            python packages/scanner/scanner_v3.py --supabase --diff
+          else
+            python packages/scanner/scanner_v3.py --supabase
+          fi
 
       - name: Upload results
         uses: actions/upload-artifact@v4
