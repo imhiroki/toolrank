@@ -13,7 +13,7 @@
     "dev": "tsx src/index.ts"
   },
   "keywords": ["mcp", "ato", "agent-tool-optimization", "toolrank", "ai-agent", "tool-scoring"],
-  "author": "Taizendo Inc.",
+  "author": "Hiroki Honda",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"

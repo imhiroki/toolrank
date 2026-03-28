@@ -41,4 +41,4 @@ Scoring logic (Level A and B) is fully open source. See `packages/scoring/`.
 
 ## License
 
-MIT. Copyright 2026 Taizendo Inc.
+MIT. Copyright 2026 Hiroki Honda.

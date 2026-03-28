@@ -33,5 +33,5 @@ The ATO framework has three stages and four dimensions:
 
 ## Optional
 
-- [GitHub Repository](https://github.com/taizendo/toolrank): Open source scoring engine
+- [GitHub Repository](https://github.com/imhiroki/toolrank): Open source scoring engine
 - [ATO Manifesto](https://toolrank.dev/blog/ato-manifesto): Why ATO matters
