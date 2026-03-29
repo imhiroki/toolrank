@@ -43,7 +43,7 @@ jobs:
       - name: Score tool definitions
         run: |
           pip install httpx
-          curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/main/packages/scoring/toolrank_score.py -o toolrank_score.py
+          curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/v1.0.0/packages/scoring/toolrank_score.py -o toolrank_score.py
           python3 -c "
           import json, sys
           from toolrank_score import score_server, to_json
@@ -68,6 +68,7 @@ jobs:
         <p style="margin-bottom: 0.75rem;"><strong>Minimum score:</strong> Change <code>70</code> to your desired threshold. We recommend 70 (Preferred level) as a starting point.</p>
         <p style="margin-bottom: 0.75rem;"><strong>Tool file path:</strong> Replace <code>your-tools.json</code> with the path to your MCP tool definition file.</p>
         <p style="margin-bottom: 0.75rem;"><strong>Fail on low score:</strong> Remove <code>sys.exit(1)</code> to make the check informational only (no PR blocking).</p>
+        <p style="margin-bottom: 0.75rem;"><strong>Version pinning:</strong> The example pins to <code>v1.0.0</code>. Replace with a specific tag or commit SHA for reproducible builds. Using <code>main</code> will always pull the latest scoring logic, which may change.</p>
       </div>
     </div>
   </section>

@@ -8,9 +8,14 @@ const history = await getScanHistory(12);
 const hasData = scores.length > 0;
 const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
 
-// Deduplicate: if 3+ servers share exact same F/C/P/E fingerprint, keep only first 2
+// Deduplicate + filter test/tutorial servers
 const fpCounts = new Map();
+const TEST_PATTERNS = /^(vsf|vsfclub|weathermcp|mcp-test|test-|demo|hello)/i;
 const dedupedScores = scores.filter(s => {
+  // Filter out obvious test/tutorial servers
+  const name = s.display_name || s.server_name || '';
+  if (TEST_PATTERNS.test(name.split('/').pop() || '')) return false;
+  // Fingerprint dedup: same F/C/P/E = keep max 2
   const fp = `${Math.round(s.findability)}-${Math.round(s.clarity)}-${Math.round(s.precision)}-${Math.round(s.efficiency)}`;
   const count = (fpCounts.get(fp) || 0) + 1;
   fpCounts.set(fp, count);
@@ -71,21 +76,53 @@ const dedupedScores = scores.filter(s => {
       <div class="w" style="max-width: 900px;">
         <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem;">
           <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">Ecosystem trend</h2>
-          <div style="display: flex; align-items: flex-end; gap: 2px; height: 80px;">
-            {history.map((h) => {
-              const pct = Math.max(5, ((h.average_score || 0) / 100) * 100);
-              const date = new Date(h.scan_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              return (
-                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                  <span style="font-size: 0.55rem; color: var(--fg-3);">{Math.round(h.average_score || 0)}</span>
-                  <div style={`width: 100%; height: ${pct}%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 4px;`}></div>
-                  <span style="font-size: 0.5rem; color: var(--fg-4); white-space: nowrap;">{date}</span>
-                </div>
-              );
-            })}
+
+          {history.length < 3 ? (
+            <!-- Not enough data for chart yet -->
+            <div style="text-align: center; padding: 1rem 0;">
+              <p style="font-size: 0.8rem; color: var(--fg-3);">
+                Daily tracking started {new Date(history[0]?.scan_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. 
+                {history.length === 1 ? '1 scan completed.' : `${history.length} scans completed.`}
+              </p>
+              <p style="font-size: 0.7rem; color: var(--fg-4); margin-top: 0.25rem;">
+                Charts and trend analysis appear after 7 days of data.
+              </p>
+            </div>
+          ) : (
+            <!-- Enough data for chart -->
+            <div style="display: flex; align-items: flex-end; gap: 2px; height: 80px;">
+              {history.map((h) => {
+                const pct = Math.max(5, ((h.average_score || 0) / 100) * 100);
+                const date = new Date(h.scan_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                return (
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                    <span style="font-size: 0.55rem; color: var(--fg-3);">{Math.round(h.average_score || 0)}</span>
+                    <div style={`width: 100%; height: ${pct}%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 4px;`}></div>
+                    <span style="font-size: 0.5rem; color: var(--fg-4); white-space: nowrap;">{date}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <!-- Stats row (always show) -->
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+            <div style="text-align: center;">
+              <p style="font-size: 1rem; font-weight: 700; color: var(--fg);">{dist.total || scores.length}</p>
+              <p style="font-size: 0.6rem; color: var(--fg-4);">Servers scored</p>
+            </div>
+            <div style="text-align: center;">
+              <p style="font-size: 1rem; font-weight: 700; color: var(--fg);">{dist.average || '—'}</p>
+              <p style="font-size: 0.6rem; color: var(--fg-4);">Average score</p>
+            </div>
+            <div style="text-align: center;">
+              <p style="font-size: 1rem; font-weight: 700; color: var(--accent);">{Math.round(((dist.dominant || 0) / (dist.total || 1)) * 100)}%</p>
+              <p style="font-size: 0.6rem; color: var(--fg-4);">Dominant rate</p>
+            </div>
           </div>
-          <p style="font-size: 0.6rem; color: var(--fg-4); margin-top: 0.75rem;">
-            Average score per daily scan. {history.length < 3 ? 'More data points accumulate each day.' : ''}
+
+          <p style="font-size: 0.6rem; color: var(--fg-4); margin-top: 0.5rem;">
+            Average score per daily scan. {history.length < 7 ? `${7 - history.length} more days until full trend view.` : `${history.length} data points collected.`}
           </p>
         </div>
       </div>

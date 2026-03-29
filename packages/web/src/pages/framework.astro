@@ -291,7 +291,9 @@ import Layout from '../layouts/Layout.astro';
       </p>
       <p style="color: var(--fg-3); font-size: 0.8rem;">
         Methodology: <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/selection_sim.py">selection_sim.py</a> (open source). 
-        Claude API validation planned for deeper statistical significance.
+        This is a local heuristic-based simulation, not an LLM selection test. 
+        It models the signals agents use (description quality, schema completeness) but is not a substitute for real-world selection data.
+        Claude API validation is planned to strengthen external reproducibility.
       </p>
     </div>
   </section>
@@ -309,33 +311,34 @@ import Layout from '../layouts/Layout.astro';
         <div style="border: 2px solid var(--accent); border-radius: var(--r); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 1: Spec Quality</p>
-            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--accent); color: white; border-radius: 100px;">Live</span>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--accent); color: white; border-radius: 100px;">Live — v1.0.0</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-3);">
             Rule-based scoring across 4 dimensions (Findability, Clarity, Precision, Efficiency). 
-            14 checks, deterministic, zero cost. Free for everyone.
+            14 checks, deterministic, zero cost. Free for everyone. Weights auto-calibrated weekly.
           </p>
         </div>
 
         <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 2: Selection Performance</p>
-            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Coming soon</span>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Q2 2026</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-3);">
-            AI-simulated selection testing. Measures how often agents actually pick your tool 
-            when presented alongside alternatives. Correlation with Layer 1: r = 0.828.
+            LLM-based selection testing using Claude API. Measures how often agents actually pick your tool 
+            when presented alongside alternatives. Local heuristic simulation (r = 0.828) is a prototype; 
+            this layer will use real LLM selection decisions.
           </p>
         </div>
 
         <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 3: Execution Reliability</p>
-            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Planned</span>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">H2 2026</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-3);">
             Runtime success rate, response quality, and error handling. Measures whether tools 
-            work reliably after being selected.
+            work reliably after being selected. Requires runtime monitoring infrastructure.
           </p>
         </div>
       </div>
