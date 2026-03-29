@@ -23,7 +23,7 @@ export interface ServerScore {
   scanned_at: string;
 }
 
-export async function getLatestScores(limit = 100): Promise<ServerScore[]> {
+export async function getLatestScores(limit = 2000): Promise<ServerScore[]> {
   if (!supabase) return [];
   
   try {
@@ -85,5 +85,22 @@ export async function getLatestSummary() {
     return data;
   } catch (e) {
     return null;
+  }
+}
+
+export async function getScanHistory(limit = 12): Promise<Array<{ scan_date: string; scored: number; average_score: number }>> {
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from('scan_summaries')
+      .select('scan_date, scored, average_score')
+      .order('scan_date', { ascending: true })
+      .limit(limit);
+
+    if (error || !data) return [];
+    return data;
+  } catch (e) {
+    return [];
   }
 }

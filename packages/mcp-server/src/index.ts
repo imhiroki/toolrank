@@ -437,4 +437,16 @@ async function main() {
   console.error("ToolRank MCP Server running on stdio");
 }
 
-main().catch(console.error);
+// Smithery sandbox: export for server scanning
+export function createSandboxServer() {
+  return server;
+}
+
+// Default export for Smithery shttp
+export default server;
+
+// Only run stdio when executed directly (not imported)
+const isDirectRun = process.argv[1]?.includes('index');
+if (isDirectRun) {
+  main().catch(console.error);
+}

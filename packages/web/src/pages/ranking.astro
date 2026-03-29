@@ -1,9 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getLatestScores, getScoreDistribution } from '../lib/supabase';
+import { getLatestScores, getScoreDistribution, getScanHistory } from '../lib/supabase';
 
-const scores = await getLatestScores(200);
+const scores = await getLatestScores(2000);
 const dist = await getScoreDistribution();
+const history = await getScanHistory(12);
 const hasData = scores.length > 0;
 const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
 ---
@@ -43,6 +44,32 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
               <p style="font-size: 0.6rem; color: var(--fg-4);">{l}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {history.length > 0 && (
+    <section style="padding: 0 0 1.5rem;">
+      <div class="w" style="max-width: 900px;">
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem;">
+          <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">Ecosystem trend</h2>
+          <div style="display: flex; align-items: flex-end; gap: 2px; height: 80px;">
+            {history.map((h) => {
+              const pct = Math.max(5, ((h.average_score || 0) / 100) * 100);
+              const date = new Date(h.scan_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              return (
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                  <span style="font-size: 0.55rem; color: var(--fg-3);">{Math.round(h.average_score || 0)}</span>
+                  <div style={`width: 100%; height: ${pct}%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 4px;`}></div>
+                  <span style="font-size: 0.5rem; color: var(--fg-4); white-space: nowrap;">{date}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p style="font-size: 0.6rem; color: var(--fg-4); margin-top: 0.75rem;">
+            Average score per weekly scan. {history.length < 3 ? 'More data points accumulate each week.' : ''}
+          </p>
         </div>
       </div>
     </section>

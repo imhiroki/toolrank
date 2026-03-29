@@ -1,6 +1,6 @@
 {
   "name": "@toolrank/mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ToolRank MCP Server — Score and optimize MCP tool definitions for AI agent discovery. The first ATO (Agent Tool Optimization) tool.",
   "type": "module",
   "main": "src/index.ts",
