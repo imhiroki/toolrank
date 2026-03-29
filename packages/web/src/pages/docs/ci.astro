@@ -1,0 +1,129 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout
+  title="CI Integration — ToolRank in GitHub Actions"
+  breadcrumbs={[{ label: "Docs", href: "/docs/ci" }, { label: "CI Integration", href: "/docs/ci" }]}
+  description="Add ToolRank scoring to your CI pipeline. Score MCP tool definitions on every PR and block merges below a quality threshold."
+>
+  <section style="padding: 3rem 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem;">CI Integration</h1>
+      <p style="color: var(--fg-2); font-size: 1rem; line-height: 1.7;">
+        Score MCP tool definitions on every pull request. Catch quality regressions before they ship.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Quick start</h2>
+      <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1rem;">
+        Add this workflow to your repository. It runs on every PR that modifies MCP tool definitions.
+      </p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1.25rem; overflow-x: auto; font-size: 0.8rem; line-height: 1.6; font-family: var(--mono);"><code>{`name: ToolRank Score
+on:
+  pull_request:
+    paths:
+      - '**/mcp.json'
+      - '**/tools.json'
+      - '**/server.json'
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Score tool definitions
+        run: |
+          pip install httpx
+          curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/main/packages/scoring/toolrank_score.py -o toolrank_score.py
+          python3 -c "
+          import json, sys
+          from toolrank_score import score_server, to_json
+          with open('your-tools.json') as f:
+              tools = json.load(f).get('tools', [])
+          result = to_json(score_server('ci-check', tools))
+          print(f'ToolRank Score: {result[\"average_score\"]}/100')
+          for t in result['tools']:
+              for i in t['issues']:
+                  print(f'  [{i[\"severity\"]}] {t[\"name\"]}: {i[\"message\"]}')
+          if result['average_score'] < 70:
+              print('::error::Score below 70')
+              sys.exit(1)
+          "`}</code></pre>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Configuration</h2>
+      <div style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.8;">
+        <p style="margin-bottom: 0.75rem;"><strong>Minimum score:</strong> Change <code>70</code> to your desired threshold. We recommend 70 (Preferred level) as a starting point.</p>
+        <p style="margin-bottom: 0.75rem;"><strong>Tool file path:</strong> Replace <code>your-tools.json</code> with the path to your MCP tool definition file.</p>
+        <p style="margin-bottom: 0.75rem;"><strong>Fail on low score:</strong> Remove <code>sys.exit(1)</code> to make the check informational only (no PR blocking).</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Score levels</h2>
+      <div style="border: 1px solid var(--border); border-radius: var(--r); overflow: hidden;">
+        <table style="width: 100%; font-size: 0.8rem; border-collapse: collapse;">
+          <thead>
+            <tr style="background: var(--bg-s);">
+              <th style="padding: 0.6rem 0.75rem; text-align: left; font-weight: 600;">Level</th>
+              <th style="padding: 0.6rem 0.75rem; text-align: left; font-weight: 600;">Score</th>
+              <th style="padding: 0.6rem 0.75rem; text-align: left; font-weight: 600;">CI recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--accent); font-weight: 600;">Dominant</td>
+              <td style="padding: 0.5rem 0.75rem;">85-100</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--fg-3);">Ship with confidence</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--ok); font-weight: 600;">Preferred</td>
+              <td style="padding: 0.5rem 0.75rem;">70-84</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--fg-3);">Good baseline. Recommended minimum.</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--warn); font-weight: 600;">Selectable</td>
+              <td style="padding: 0.5rem 0.75rem;">50-69</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--fg-3);">Needs improvement before shipping</td>
+            </tr>
+            <tr style="border-top: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0.75rem; color: var(--err); font-weight: 600;">Below 50</td>
+              <td style="padding: 0.5rem 0.75rem;">0-49</td>
+              <td style="padding: 0.5rem 0.75rem; color: var(--fg-3);">Block merge. Tools are invisible to agents.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 3rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Other integrations</h2>
+      <div style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.8;">
+        <p style="margin-bottom: 0.75rem;"><strong>MCP Server:</strong> <code>npx @toolrank/mcp-server</code> — score from Claude Code, Cursor, or any MCP client</p>
+        <p style="margin-bottom: 0.75rem;"><strong>Python:</strong> <code>from toolrank_score import score_server</code> — embed scoring in your own scripts</p>
+        <p style="margin-bottom: 0.75rem;"><strong>HTTP API:</strong> <code>POST https://mcp.toolrank.dev/mcp</code> — JSON-RPC endpoint for remote scoring</p>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--fg-4); margin-top: 1rem;">
+        Scoring engine: <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py">open source</a> · 
+        Score version: v1.0.0 · 
+        <a href="https://github.com/imhiroki/toolrank/blob/main/GOVERNANCE.md">Governance</a>
+      </p>
+    </div>
+  </section>
+</Layout>

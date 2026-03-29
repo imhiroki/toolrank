@@ -23,7 +23,9 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
           : 'First ecosystem scan in progress. Rankings will appear automatically.'}
       </p>
       {lastUpdated && (
-        <p style="color: var(--fg-4); font-size: 0.7rem; margin-top: 0.25rem;">Last scan: {lastUpdated}</p>
+        <p style="color: var(--fg-4); font-size: 0.7rem; margin-top: 0.25rem;">
+          Last scan: {lastUpdated} · Source: Smithery Registry · Score version: v1.0.0 · Scanned daily
+        </p>
       )}
     </div>
   </section>

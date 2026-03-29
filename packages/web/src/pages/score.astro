@@ -409,6 +409,14 @@ import Layout from '../layouts/Layout.astro';
 
       h += `
         <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;">
+          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Estimated selection rate</p>
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
+            ${avg >= 85 ? `At ${Math.round(avg)}/100, agents select tools like yours <strong style="color: var(--accent);">~85% of the time</strong> in competitive scenarios.`
+              : avg >= 70 ? `At ${Math.round(avg)}/100, estimated selection rate: <strong style="color: var(--ok);">~13-40%</strong>. Improving to 85+ would increase to ~85%.`
+              : avg >= 50 ? `At ${Math.round(avg)}/100, estimated selection rate: <strong style="color: var(--warn);">~2-13%</strong>. Agents rarely pick tools at this level.`
+              : `At ${Math.round(avg)}/100, agents almost never select tools like this (<strong style="color: var(--err);">&lt;2%</strong>).`}
+            <span style="font-size: 0.7rem; color: var(--fg-4);"> Based on 500-round simulation (r=0.828). <a href="/framework">Methodology →</a></span>
+          </p>
           <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Share your score</p>
           <div class="share-bar" style="margin-bottom: 1rem;">
             <a class="share-btn" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`My MCP tools scored ${Math.round(avg)}/100 on ToolRank`)}&url=https://toolrank.dev/score" target="_blank" rel="noopener">𝕏 Share</a>

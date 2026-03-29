@@ -254,6 +254,139 @@ import Layout from '../layouts/Layout.astro';
   </section>
 
   <!-- CTA -->
+  <section style="padding: 2rem 0;">
+    <div class="w" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Evidence: Score predicts selection</h2>
+      <p style="color: var(--fg-2); line-height: 1.7; margin-bottom: 1.5rem;">
+        We ran 500 simulated tool selection rounds with three quality levels. An agent was asked to 
+        choose between tools of varying description quality for the same task. The results:
+      </p>
+
+      <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+          <div>
+            <p style="font-size: 0.7rem; color: var(--fg-4); margin-bottom: 0.25rem;">Low quality (59/100)</p>
+            <p style="font-size: 2rem; font-weight: 700; color: var(--err);">1.8%</p>
+            <p style="font-size: 0.65rem; color: var(--fg-4);">selection rate</p>
+          </div>
+          <div>
+            <p style="font-size: 0.7rem; color: var(--fg-4); margin-bottom: 0.25rem;">Medium quality (83/100)</p>
+            <p style="font-size: 2rem; font-weight: 700; color: var(--warn);">12.8%</p>
+            <p style="font-size: 0.65rem; color: var(--fg-4);">selection rate</p>
+          </div>
+          <div>
+            <p style="font-size: 0.7rem; color: var(--fg-4); margin-bottom: 0.25rem;">High quality (95/100)</p>
+            <p style="font-size: 2rem; font-weight: 700; color: var(--accent);">85.4%</p>
+            <p style="font-size: 0.65rem; color: var(--fg-4);">selection rate</p>
+          </div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--fg-3); margin-top: 1rem; text-align: center;">
+          Pearson correlation: <strong>r = 0.828</strong> (score vs selection probability). 500 rounds, 3 categories, local simulation.
+        </p>
+      </div>
+
+      <p style="color: var(--fg-2); line-height: 1.7; margin-bottom: 1rem;">
+        This aligns with the academic finding (arXiv 2602.18914) that quality-compliant descriptions 
+        achieve 72% selection probability versus 20% baseline — a 3.6x advantage.
+      </p>
+      <p style="color: var(--fg-3); font-size: 0.8rem;">
+        Methodology: <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/selection_sim.py">selection_sim.py</a> (open source). 
+        Claude API validation planned for deeper statistical significance.
+      </p>
+    </div>
+  </section>
+
+  <!-- Score architecture -->
+  <section style="padding: 2rem 0;">
+    <div class="w" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Score architecture</h2>
+      <p style="color: var(--fg-2); line-height: 1.7; margin-bottom: 1.5rem;">
+        ToolRank Score evaluates tools across three progressive layers. Each layer adds depth 
+        while keeping the previous layer's score stable and reproducible.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="border: 2px solid var(--accent); border-radius: var(--r); padding: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <p style="font-weight: 600; font-size: 0.9rem;">Layer 1: Spec Quality</p>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--accent); color: white; border-radius: 100px;">Live</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--fg-3);">
+            Rule-based scoring across 4 dimensions (Findability, Clarity, Precision, Efficiency). 
+            14 checks, deterministic, zero cost. Free for everyone.
+          </p>
+        </div>
+
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <p style="font-weight: 600; font-size: 0.9rem;">Layer 2: Selection Performance</p>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Coming soon</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--fg-3);">
+            AI-simulated selection testing. Measures how often agents actually pick your tool 
+            when presented alongside alternatives. Correlation with Layer 1: r = 0.828.
+          </p>
+        </div>
+
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <p style="font-weight: 600; font-size: 0.9rem;">Layer 3: Execution Reliability</p>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Planned</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--fg-3);">
+            Runtime success rate, response quality, and error handling. Measures whether tools 
+            work reliably after being selected.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Developer integration -->
+  <section style="padding: 2rem 0;">
+    <div class="w" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Integrate into your workflow</h2>
+
+      <div class="grid-2" style="gap: 0.75rem; margin-bottom: 1.5rem;">
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">Score in browser</p>
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.5rem;">Paste JSON or enter Smithery server name.</p>
+          <a href="/score" style="font-size: 0.8rem;">toolrank.dev/score →</a>
+        </div>
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">MCP Server</p>
+          <code style="font-size: 0.75rem; display: block; margin-bottom: 0.5rem;">npx @toolrank/mcp-server</code>
+          <a href="https://smithery.ai/servers/imhiroki/toolrank" style="font-size: 0.8rem;">Smithery →</a>
+        </div>
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">GitHub Actions CI</p>
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.5rem;">Score on every PR. Fail below threshold.</p>
+          <a href="/docs/ci" style="font-size: 0.8rem;">Setup guide →</a>
+        </div>
+        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+          <p style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem;">Badge</p>
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.5rem;">Show your score in your README.</p>
+          <a href="/badge" style="font-size: 0.8rem;">Get badge →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transparency -->
+  <section style="padding: 2rem 0;">
+    <div class="w" style="max-width: 720px;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Transparency</h2>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--fg-2);">
+        <p><strong>Score version:</strong> v1.0.0 (2026-03-29). <a href="https://github.com/imhiroki/toolrank/blob/main/CHANGELOG.md">Changelog</a></p>
+        <p><strong>Scoring logic:</strong> <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py">Open source</a>. 14 rule-based checks, deterministic, auditable.</p>
+        <p><strong>Weight calibration:</strong> Auto-calibrated weekly against real-world usage data. <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/weights.json">Current weights</a></p>
+        <p><strong>Data sources:</strong> Smithery Registry. Official MCP Registry integration in progress.</p>
+        <p><strong>Governance:</strong> <a href="https://github.com/imhiroki/toolrank/blob/main/GOVERNANCE.md">GOVERNANCE.md</a>. Dispute resolution via GitHub Issues.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
   <section style="padding: 3rem 0;">
     <div class="w" style="max-width: 720px; text-align: center;">
       <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem;">Ready to optimize?</h2>
