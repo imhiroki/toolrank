@@ -1,0 +1,74 @@
+name: Daily Scan & Deploy
+
+on:
+  schedule:
+    - cron: '0 21 * * *'  # 06:00 JST daily
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Scan mode'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - diff
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180  # 3 hour max for full scan (~4,000 servers × 2s = ~2.2h)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install httpx supabase
+
+      - name: Run ecosystem scan
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          if [ "$MODE" = "diff" ]; then
+            python packages/scanner/scanner_v3.py --supabase --diff
+          else
+            python packages/scanner/scanner_v3.py --supabase --full
+          fi
+
+      - name: Upload scan data
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-${{ github.run_number }}
+          path: packages/scanner/data/
+          retention-days: 90
+
+  build-deploy:
+    needs: scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & build Astro
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          cd packages/web
+          npm install
+          npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy packages/web/dist --project-name=toolrank
