@@ -4,106 +4,179 @@ import { supabase } from '../../lib/supabase';
 
 export async function getStaticPaths() {
   if (!supabase) return [];
-  
   try {
-    const { data } = await supabase
-      .from('latest_scores')
-      .select('server_name')
-      .order('total_score', { ascending: false })
-      .limit(2000);
-    
+    const { data } = await supabase.from('latest_scores').select('server_name').order('total_score', { ascending: false }).limit(2000);
     if (!data) return [];
-    return data.map(s => ({
-      params: { server: s.server_name },
-    }));
-  } catch {
-    return [];
-  }
+    return data.map(s => ({ params: { server: s.server_name } }));
+  } catch { return []; }
 }
 
 const { server } = Astro.params;
-
-// Get current score
-let current = null;
-let history = [];
+let current: any = null;
+let history: any[] = [];
+let similar: any[] = [];
 
 if (supabase && server) {
   try {
-    const { data: scoreData } = await supabase
-      .from('latest_scores')
-      .select('*')
-      .eq('server_name', server)
-      .single();
-    current = scoreData;
+    const { data } = await supabase.from('latest_scores').select('*').eq('server_name', server).single();
+    current = data;
   } catch {}
 
-  // Get score history for this server
-  try {
-    const { data: histData } = await supabase
-      .from('scores')
-      .select('total_score, findability, clarity, precision, efficiency, scanned_at')
-      .eq('server_id', current?.id || '')
-      .order('scanned_at', { ascending: true })
-      .limit(30);
-    history = histData || [];
-  } catch {}
+  if (current?.id) {
+    try {
+      const { data } = await supabase.from('scores')
+        .select('total_score, findability, clarity, precision, efficiency, scanned_at')
+        .eq('server_id', current.id).order('scanned_at', { ascending: true }).limit(30);
+      history = data || [];
+    } catch {}
+  }
+
+  if (current) {
+    try {
+      const lo = Math.max(0, current.total_score - 5);
+      const hi = Math.min(100, current.total_score + 5);
+      const { data } = await supabase.from('latest_scores')
+        .select('server_name, display_name, total_score, level_name')
+        .gte('total_score', lo).lte('total_score', hi)
+        .neq('server_name', server)
+        .order('total_score', { ascending: false }).limit(6);
+      similar = data || [];
+    } catch {}
+  }
 }
 
-const levelColors: Record<string, string> = {
-  'Dominant': 'var(--accent)',
-  'Preferred': 'var(--ok)',
-  'Selectable': 'var(--warn)',
-  'Visible': 'var(--fg-4)',
-  'Absent': 'var(--err)',
-};
+const lvlC: Record<string, string> = { Dominant: 'var(--accent)', Preferred: 'var(--ok)', Selectable: 'var(--warn)', Visible: 'var(--fg-4)', Absent: 'var(--err)' };
+
+const selRate = current ? (current.total_score >= 85 ? '~85%' : current.total_score >= 70 ? '~13-40%' : current.total_score >= 50 ? '~2-13%' : '<2%') : '—';
+
+const dims = current ? [
+  { label: 'Findability', val: current.findability, max: 25, desc: 'Can AI agents discover this tool? Measures naming quality, keyword overlap with queries, and registry presence.' },
+  { label: 'Clarity', val: current.clarity, max: 35, desc: 'Can agents understand what this tool does? Measures description quality, action verbs, usage context ("Use this when..."), and return value documentation.' },
+  { label: 'Precision', val: current.precision, max: 25, desc: 'Is the interface precise? Measures input schema completeness, type definitions, required fields, enums, defaults, and parameter descriptions.' },
+  { label: 'Efficiency', val: current.efficiency, max: 15, desc: 'Is the tool token-efficient? Measures description length optimization, tool count, and naming conciseness.' },
+] : [];
+
+const suggestions: Array<{dim: string; msg: string; impact: string}> = [];
+if (current) {
+  if (current.findability < 20) suggestions.push({ dim: 'Findability', msg: 'Use a specific, action-oriented tool name (e.g., search_repositories instead of search)', impact: '+3-5 pts' });
+  if (current.clarity < 28) suggestions.push({ dim: 'Clarity', msg: 'Add "Use this when..." context to your description so agents know when to invoke this tool', impact: '+3-5 pts' });
+  if (current.clarity < 25) suggestions.push({ dim: 'Clarity', msg: 'Start descriptions with an action verb and document what the tool returns', impact: '+5-8 pts' });
+  if (current.precision < 18) suggestions.push({ dim: 'Precision', msg: 'Define required fields in your inputSchema to prevent agents from guessing parameters', impact: '+2-3 pts' });
+  if (current.precision < 15) suggestions.push({ dim: 'Precision', msg: 'Add type definitions and descriptions to all schema properties', impact: '+5-8 pts' });
+  if (current.efficiency < 12) suggestions.push({ dim: 'Efficiency', msg: 'Keep total tool count under 15 and individual descriptions under 200 tokens', impact: '+1-3 pts' });
+  if (suggestions.length === 0) suggestions.push({ dim: 'All', msg: 'This server is well-optimized for AI agent discovery. Consider adding enums, defaults, and usage examples for marginal gains.', impact: '+1-2 pts' });
+}
+
+const schemaJson = current ? JSON.stringify({
+  '@context': 'https://schema.org', '@type': 'SoftwareApplication',
+  name: current.display_name || server,
+  applicationCategory: 'DeveloperApplication',
+  description: current.description || `MCP server scoring ${Math.round(current.total_score)}/100 on ToolRank`,
+  aggregateRating: { '@type': 'AggregateRating', ratingValue: Math.round(current.total_score), bestRating: 100, worstRating: 0, ratingCount: 1 },
+}) : '';
+
+const title = current ? `${current.display_name || server} — ToolRank Score ${Math.round(current.total_score)}/100` : `${server} — ToolRank`;
+const desc = current ? `${current.display_name || server} scores ${Math.round(current.total_score)}/100 (${current.level_name}) on ToolRank. Findability ${Math.round(current.findability)}/25, Clarity ${Math.round(current.clarity)}/35, Precision ${Math.round(current.precision)}/25, Efficiency ${Math.round(current.efficiency)}/15. Estimated agent selection rate: ${selRate}.` : `Score details for ${server}.`;
 ---
 
-<Layout
-  title={current ? `${current.display_name || server} — ToolRank Score` : `${server} — ToolRank`}
-  description={current ? `ToolRank Score: ${current.total_score}/100 (${current.level_name}). Findability ${current.findability}, Clarity ${current.clarity}, Precision ${current.precision}, Efficiency ${current.efficiency}.` : `Score details for ${server}.`}
-  breadcrumbs={[{ label: 'Ranking', href: '/ranking' }, { label: current?.display_name || server || '', href: `/ranking/${server}` }]}
->
-  <section style="padding: 3rem 0 1rem;">
-    <div class="w" style="max-width: 720px;">
-      {current ? (
-        <>
-          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-            <div>
+<Layout title={title} description={desc}
+  breadcrumbs={[{ label: 'Ranking', href: '/ranking' }, { label: current?.display_name || server || '', href: `/ranking/${server}` }]}>
+  {schemaJson && <script type="application/ld+json" set:html={schemaJson} />}
+
+  {current ? (
+    <article>
+      <section style="padding: 3rem 0 1rem;">
+        <div class="w" style="max-width: 720px;">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1;">
               <h1 style="font-size: 1.75rem; font-weight: 700;">{current.display_name || server}</h1>
               <p style="font-size: 0.8rem; color: var(--fg-4); font-family: var(--mono);">{server}</p>
             </div>
-            <div style="margin-left: auto; text-align: right;">
-              <p style={`font-size: 2.5rem; font-weight: 700; color: ${levelColors[current.level_name] || 'var(--fg)'};`}>{Math.round(current.total_score)}</p>
-              <p style={`font-size: 0.75rem; font-weight: 600; color: ${levelColors[current.level_name] || 'var(--fg-3)'};`}>{current.level_name}</p>
+            <div style="text-align: right;">
+              <p style={`font-size: 2.5rem; font-weight: 700; color: ${lvlC[current.level_name] || 'var(--fg)'};`}>{Math.round(current.total_score)}</p>
+              <p style={`font-size: 0.75rem; font-weight: 600; color: ${lvlC[current.level_name] || 'var(--fg-3)'};`}>{current.level_name}</p>
             </div>
           </div>
+          {current.description && <p style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.7; margin-bottom: 0.5rem;">{current.description}</p>}
+          <p style="font-size: 0.75rem; color: var(--fg-4);">
+            {current.tool_count} tool{current.tool_count !== 1 ? 's' : ''} · Source: {current.source || 'smithery'} · Scanned: {new Date(current.scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+      </section>
 
-          <!-- Dimension breakdown -->
-          <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">Score breakdown</h2>
-            <div class="grid-4">
-              {[
-                { label: 'Findability', value: current.findability, max: 25 },
-                { label: 'Clarity', value: current.clarity, max: 35 },
-                { label: 'Precision', value: current.precision, max: 25 },
-                { label: 'Efficiency', value: current.efficiency, max: 15 },
-              ].map(d => (
-                <div style="text-align: center;">
-                  <p style="font-size: 1.25rem; font-weight: 700;">{Math.round(d.value)}</p>
-                  <p style="font-size: 0.6rem; color: var(--fg-4);">{d.label} / {d.max}</p>
-                  <div style="height: 4px; background: var(--border); border-radius: 2px; margin-top: 0.4rem;">
-                    <div style={`height: 100%; width: ${(d.value / d.max) * 100}%; background: var(--accent); border-radius: 2px;`}></div>
-                  </div>
+      <!-- Dimensions -->
+      <section style="padding: 1rem 0;">
+        <div class="w" style="max-width: 720px;">
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Score breakdown</h2>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {dims.map(d => (
+              <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                  <p style="font-size: 0.85rem; font-weight: 600;">{d.label}</p>
+                  <p style="font-size: 0.85rem; font-weight: 700;">{Math.round(d.val)}<span style="color: var(--fg-4); font-weight: 400;">/{d.max}</span></p>
                 </div>
-              ))}
-            </div>
+                <div style="height: 6px; background: var(--border); border-radius: 3px; margin-bottom: 0.5rem;">
+                  <div style={`height: 100%; width: ${(d.val / d.max) * 100}%; background: ${d.val / d.max >= 0.8 ? 'var(--accent)' : d.val / d.max >= 0.6 ? 'var(--ok)' : 'var(--warn)'}; border-radius: 3px;`}></div>
+                </div>
+                <p style="font-size: 0.7rem; color: var(--fg-3); line-height: 1.5;">{d.desc}</p>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <!-- Score history -->
-          {history.length > 1 && (
-            <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.5rem;">
-              <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem;">Score history</h2>
-              <div style="display: flex; align-items: flex-end; gap: 2px; height: 80px;">
+      <!-- Suggestions -->
+      <section style="padding: 1rem 0;">
+        <div class="w" style="max-width: 720px;">
+          <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">{current.total_score >= 85 ? 'Optimization status' : 'How to improve this score'}</h2>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {suggestions.map(s => (
+              <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.85rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-s); color: var(--fg-3); white-space: nowrap; margin-top: 0.1rem;">{s.dim}</span>
+                <div style="flex: 1;">
+                  <p style="font-size: 0.8rem; color: var(--fg-2);">{s.msg}</p>
+                  <p style="font-size: 0.65rem; color: var(--accent); margin-top: 0.15rem;">Expected impact: {s.impact}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {current.total_score < 85 && (
+            <p style="font-size: 0.75rem; color: var(--fg-3); margin-top: 0.75rem;">
+              <a href="/score" style="color: var(--accent);">Score this server →</a> for line-by-line fixes with rewrite proposals.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <!-- Selection rate -->
+      <section style="padding: 1rem 0;">
+        <div class="w" style="max-width: 720px;">
+          <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem;">
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Estimated selection rate</h2>
+            <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem;">{selRate}</p>
+            <p style="font-size: 0.75rem; color: var(--fg-3); line-height: 1.6;">
+              {current.total_score >= 85
+                ? `At ${Math.round(current.total_score)}/100, AI agents select tools like this approximately 85% of the time when choosing between competing alternatives. This server is in the top tier for agent discoverability.`
+                : current.total_score >= 70
+                ? `At ${Math.round(current.total_score)}/100, this tool is selected 13-40% of the time in competitive scenarios. Improving to 85+ would increase selection rate to approximately 85%.`
+                : current.total_score >= 50
+                ? `At ${Math.round(current.total_score)}/100, AI agents rarely select this tool (2-13% of the time). Most selections go to higher-scored alternatives in the same category.`
+                : `At ${Math.round(current.total_score)}/100, this tool is nearly invisible to AI agents. Significant improvements to tool definitions are needed.`}
+            </p>
+            <p style="font-size: 0.65rem; color: var(--fg-4); margin-top: 0.5rem;">
+              Based on 500-round selection simulation (Pearson r = 0.828). <a href="/framework" style="color: var(--fg-4); text-decoration: underline;">Methodology →</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- History -->
+      {history.length > 1 && (
+        <section style="padding: 1rem 0;">
+          <div class="w" style="max-width: 720px;">
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Score history</h2>
+            <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem;">
+              <div style="display: flex; align-items: flex-end; gap: 2px; height: 100px;">
                 {history.map(h => {
                   const pct = Math.max(5, (h.total_score / 100) * 100);
                   const date = new Date(h.scanned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -116,55 +189,57 @@ const levelColors: Record<string, string> = {
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          <!-- Selection rate estimate -->
-          <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Estimated selection rate</h2>
-            <p style="font-size: 0.8rem; color: var(--fg-3);">
-              {current.total_score >= 85
-                ? `At ${Math.round(current.total_score)}/100, agents select tools like this ~85% of the time in competitive scenarios.`
-                : current.total_score >= 70
-                ? `At ${Math.round(current.total_score)}/100, estimated selection rate: ~13-40%. Improving to 85+ would increase to ~85%.`
-                : current.total_score >= 50
-                ? `At ${Math.round(current.total_score)}/100, estimated selection rate: ~2-13%. Agents rarely pick tools at this level.`
-                : `At ${Math.round(current.total_score)}/100, agents almost never select this tool (<2%).`}
-            </p>
-            <p style="font-size: 0.65rem; color: var(--fg-4); margin-top: 0.3rem;">
-              Based on 500-round simulation (r=0.828). <a href="/framework">Methodology</a>
-            </p>
-          </div>
-
-          <!-- Metadata -->
-          <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Details</h2>
-            <div style="font-size: 0.8rem; color: var(--fg-3); display: flex; flex-direction: column; gap: 0.4rem;">
-              <p><strong>Tools:</strong> {current.tool_count}</p>
-              <p><strong>Source:</strong> {current.source || 'smithery'}</p>
-              <p><strong>Last scanned:</strong> {new Date(current.scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              <p style="font-size: 0.65rem; color: var(--fg-4); margin-top: 0.75rem;">
+                Tracked daily. {history.length < 5 ? 'More data points appear as daily scans continue.' : `${history.length} data points.`}
+              </p>
             </div>
           </div>
+        </section>
+      )}
 
-          <!-- Actions -->
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <a href={`/score`} class="btn btn-primary" style="font-size: 0.85rem; padding: 0.6rem 1.25rem;">Score this server</a>
-            <a href="/ranking" class="btn btn-ghost" style="font-size: 0.85rem; padding: 0.6rem 1.25rem;">← Back to ranking</a>
+      <!-- Similar -->
+      {similar.length > 0 && (
+        <section style="padding: 1rem 0;">
+          <div class="w" style="max-width: 720px;">
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Similar servers</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem;">
+              {similar.map(s => (
+                <a href={`/ranking/${s.server_name}`} style="display: block; border: 1px solid var(--border); border-radius: var(--r); padding: 0.75rem; text-decoration: none;">
+                  <p style="font-size: 0.8rem; font-weight: 600; color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{s.display_name || s.server_name}</p>
+                  <p style="font-size: 0.7rem; color: var(--fg-4);">{Math.round(s.total_score)}/100 · {s.level_name}</p>
+                </a>
+              ))}
+            </div>
           </div>
+        </section>
+      )}
 
-          <!-- Share -->
-          <div class="share-bar" style="margin-top: 1.5rem;">
-            <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${current.display_name || server} scores ${Math.round(current.total_score)}/100 on ToolRank`)}&url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener">𝕏 Share</a>
+      <!-- Actions -->
+      <section style="padding: 1.5rem 0 3rem;">
+        <div class="w" style="max-width: 720px;">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <a href="/score" style="padding: 0.6rem 1.25rem; background: var(--accent); color: #fff; border-radius: var(--r); font-size: 0.8rem; font-weight: 600; text-decoration: none;">Score this server</a>
+            <a href="/ranking" style="padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.8rem; color: var(--fg); text-decoration: none;">← All rankings</a>
+            <a href="/badge" style="padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.8rem; color: var(--fg); text-decoration: none;">Get badge</a>
+          </div>
+          <div class="share-bar">
+            <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${current.display_name || server} scores ${Math.round(current.total_score)}/100 on ToolRank (${current.level_name})`)}&url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener">𝕏 Share</a>
             <a class="share-btn" href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener">LinkedIn</a>
           </div>
-        </>
-      ) : (
-        <div style="text-align: center; padding: 4rem 0;">
-          <p style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Server not found</p>
-          <p style="color: var(--fg-3); margin-bottom: 1.5rem;">"{server}" is not in our database yet.</p>
-          <a href="/ranking" class="btn btn-ghost">View all rankings</a>
         </div>
-      )}
-    </div>
-  </section>
+      </section>
+    </article>
+  ) : (
+    <section style="padding: 4rem 0;">
+      <div class="w" style="max-width: 720px; text-align: center;">
+        <p style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">Server not found</p>
+        <p style="color: var(--fg-3); margin-bottom: 0.5rem;">"{server}" is not in our database.</p>
+        <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 1.5rem;">
+          73% of MCP servers have no tool definitions and cannot be scored.
+          <a href="/score" style="color: var(--accent);">Check if your server is visible to AI agents →</a>
+        </p>
+        <a href="/ranking" style="padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.85rem; color: var(--fg); text-decoration: none;">View all rankings</a>
+      </div>
+    </section>
+  )}
 </Layout>
