@@ -35,9 +35,9 @@ jobs:
         run: |
           MODE="${{ github.event.inputs.mode || 'full' }}"
           if [ "$MODE" = "diff" ]; then
-            python packages/scanner/scanner_v3.py --supabase --diff
+            python packages/scanner/scanner_v3.py --supabase --diff --multi
           else
-            python packages/scanner/scanner_v3.py --supabase --full
+            python packages/scanner/scanner_v3.py --supabase --full --multi
           fi
 
       - name: Upload scan data
