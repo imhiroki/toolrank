@@ -94,12 +94,16 @@ export async function getScanHistory(limit = 12): Promise<Array<{ scan_date: str
   try {
     const { data, error } = await supabase
       .from('scan_summaries')
-      .select('scan_date, scored, average_score')
+      .select('scan_date, scored_servers, avg_score')
       .order('scan_date', { ascending: true })
       .limit(limit);
 
     if (error || !data) return [];
-    return data;
+    return data.map(d => ({
+      scan_date: d.scan_date,
+      scored: d.scored_servers,
+      average_score: d.avg_score,
+    }));
   } catch (e) {
     return [];
   }
