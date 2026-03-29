@@ -1,5 +1,5 @@
 """
-ToolRank Scoring Engine v0.1
+ToolRank Scoring Engine v1.0.0
 Level A: Rule-based scoring (zero API cost)
 
 Scores MCP tool definitions across 4 dimensions:
@@ -12,12 +12,18 @@ Based on:
 - arXiv 2602.14878: 6 components of tool descriptions
 - arXiv 2602.18914: 4-dimensional quality standard (18 smell categories)
 - Anthropic Tool Search accuracy data
+
+Version history: see CHANGELOG.md
 """
 
 import json
 import re
 from dataclasses import dataclass, field
 from typing import Optional
+
+# Scoring version — increment on any scoring logic change
+SCORE_VERSION = "1.0.0"
+SCORE_VERSION_DATE = "2026-03-29"
 from pathlib import Path
 
 

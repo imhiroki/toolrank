@@ -1,0 +1,123 @@
+name: ToolRank Lint
+description: Score MCP tool definitions and post results as PR comments
+branding:
+  icon: check-circle
+  color: purple
+
+inputs:
+  path:
+    description: 'Path to MCP server definition file (JSON)'
+    required: false
+    default: ''
+  min-score:
+    description: 'Minimum ToolRank Score to pass (0-100)'
+    required: false
+    default: '70'
+  fail-on-low:
+    description: 'Fail the check if score is below min-score'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install ToolRank scorer
+      shell: bash
+      run: |
+        pip install httpx
+        # Download scoring engine
+        curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/main/packages/scoring/toolrank_score.py -o /tmp/toolrank_score.py
+
+    - name: Find and score tool definitions
+      shell: bash
+      id: score
+      run: |
+        python3 << 'PYTHON'
+        import json, sys, glob, os
+        sys.path.insert(0, '/tmp')
+        from toolrank_score import score_server, to_json
+
+        path = os.environ.get('INPUT_PATH', '')
+        min_score = float(os.environ.get('INPUT_MIN_SCORE', '70'))
+
+        # Find tool definition files
+        if path:
+            files = [path]
+        else:
+            patterns = ['**/mcp.json', '**/tools.json', '**/server.json', '**/smithery.yaml']
+            files = []
+            for p in patterns:
+                files.extend(glob.glob(p, recursive=True))
+
+        if not files:
+            print("::notice::No MCP tool definition files found. Skipping ToolRank lint.")
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                f.write("score=skip\n")
+                f.write("comment=No MCP tool definition files found.\n")
+            sys.exit(0)
+
+        all_results = []
+        for fpath in files:
+            try:
+                with open(fpath) as f:
+                    data = json.load(f)
+                tools = data.get('tools', [data] if 'name' in data else [])
+                if not tools:
+                    continue
+                result = to_json(score_server(fpath, tools))
+                all_results.append((fpath, result))
+            except Exception as e:
+                print(f"::warning::Failed to score {fpath}: {e}")
+
+        if not all_results:
+            with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                f.write("score=skip\n")
+            sys.exit(0)
+
+        # Build comment
+        lines = ["## ToolRank Score Report\n"]
+        overall_scores = []
+        for fpath, result in all_results:
+            avg = result['average_score']
+            overall_scores.append(avg)
+            emoji = "🟣" if avg >= 85 else "🟢" if avg >= 70 else "🟡" if avg >= 50 else "🔴"
+            lines.append(f"### {emoji} `{fpath}`: **{avg}/100**\n")
+            for t in result['tools']:
+                d = t['dimensions']
+                lines.append(f"| Tool | Score | F | C | P | E | Level |")
+                lines.append(f"|------|-------|---|---|---|---|-------|")
+                lines.append(f"| `{t['name']}` | {t['total_score']} | {d['findability']} | {d['clarity']} | {d['precision']} | {d['efficiency']} | {t['level_name']} |")
+                if t['issues']:
+                    lines.append(f"\n**Issues ({len(t['issues'])}):**")
+                    for i in t['issues'][:5]:
+                        lines.append(f"- [{i['severity']}] {i['message']} — {i['fix']} (+{i['impact']}pt)")
+                lines.append("")
+
+        avg_all = sum(overall_scores) / len(overall_scores)
+        lines.append(f"---\n*Scored by [ToolRank](https://toolrank.dev/score) | [Improve your score](https://toolrank.dev/framework)*")
+
+        comment = "\n".join(lines)
+        passed = avg_all >= min_score
+
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"score={avg_all}\n")
+            f.write(f"passed={'true' if passed else 'false'}\n")
+
+        # Write comment to file for PR comment step
+        with open('/tmp/toolrank-comment.md', 'w') as f:
+            f.write(comment)
+
+        print(f"Average ToolRank Score: {avg_all}/100 ({'PASS' if passed else 'FAIL'})")
+        if not passed and os.environ.get('INPUT_FAIL_ON_LOW', 'false') == 'true':
+            print(f"::error::ToolRank Score {avg_all} is below minimum {min_score}")
+            sys.exit(1)
+        PYTHON
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_MIN_SCORE: ${{ inputs.min-score }}
+        INPUT_FAIL_ON_LOW: ${{ inputs.fail-on-low }}
