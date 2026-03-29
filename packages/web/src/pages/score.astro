@@ -23,6 +23,7 @@ import Layout from '../layouts/Layout.astro';
         <!-- Tab switcher -->
         <div style="display: flex; border-bottom: 2px solid var(--border); margin-bottom: 1.25rem;">
           <button class="tab active" data-tab="lookup" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; background: none; border: none; cursor: pointer; color: var(--accent); border-bottom: 2px solid var(--accent); margin-bottom: -2px;">Server lookup</button>
+          <button class="tab" data-tab="github" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500; background: none; border: none; cursor: pointer; color: var(--fg-4); border-bottom: 2px solid transparent; margin-bottom: -2px;">GitHub repo</button>
           <button class="tab" data-tab="json" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500; background: none; border: none; cursor: pointer; color: var(--fg-4); border-bottom: 2px solid transparent; margin-bottom: -2px;">Paste JSON</button>
         </div>
 
@@ -42,6 +43,23 @@ import Layout from '../layouts/Layout.astro';
             <a href="https://smithery.ai" target="_blank" style="color: var(--fg-4); text-decoration: underline;">Find your server →</a>
           </p>
           <div id="lookup-status" style="margin-top: 0.75rem;"></div>
+        </div>
+
+        <!-- Tab: GitHub repo -->
+        <div id="tab-github" style="display: none;">
+          <label style="font-size: 0.8rem; font-weight: 500; color: var(--fg-3); display: block; margin-bottom: 0.4rem;">GitHub repository URL</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="github-url" placeholder="e.g. https://github.com/owner/repo"
+              style="flex: 1; padding: 0.65rem 0.875rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--r); background: var(--bg-s); color: var(--fg); outline: none;" />
+            <button onclick="lookupGitHub()" id="github-btn"
+              style="padding: 0.65rem 1.25rem; background: var(--accent); color: #fff; border: none; border-radius: var(--r); font-weight: 600; font-size: 0.85rem; cursor: pointer; white-space: nowrap;">
+              Score
+            </button>
+          </div>
+          <p style="font-size: 0.7rem; color: var(--fg-4); margin-top: 0.4rem;">
+            Scans your repo for MCP tool definitions (package.json, server.json, tools.json, src/*.ts) and scores them.
+          </p>
+          <div id="github-status" style="margin-top: 0.75rem;"></div>
         </div>
 
         <!-- Tab: JSON paste -->
@@ -82,6 +100,7 @@ import Layout from '../layouts/Layout.astro';
         tab.style.borderBottom = '2px solid var(--accent)';
         tab.style.fontWeight = '600';
         document.getElementById('tab-lookup').style.display = tab.dataset.tab === 'lookup' ? 'block' : 'none';
+        document.getElementById('tab-github').style.display = tab.dataset.tab === 'github' ? 'block' : 'none';
         document.getElementById('tab-json').style.display = tab.dataset.tab === 'json' ? 'block' : 'none';
       });
     });
@@ -147,6 +166,104 @@ import Layout from '../layouts/Layout.astro';
     // Enter key triggers lookup
     document.getElementById('server-name').addEventListener('keydown', e => {
       if (e.key === 'Enter') lookupServer();
+    });
+
+    // GitHub lookup
+    const GITHUB_TOOL_FILES = [
+      'mcp.json', 'tools.json', 'server.json',
+      'src/index.ts', 'src/server.ts', 'src/tools.ts',
+      'src/index.js', 'index.ts', 'index.js',
+    ];
+
+    async function lookupGitHub() {
+      const urlInput = document.getElementById('github-url').value.trim();
+      const status = document.getElementById('github-status');
+      if (!urlInput) { status.innerHTML = '<p style="color:var(--err);font-size:0.8rem;">Enter a GitHub repository URL.</p>'; return; }
+
+      // Parse owner/repo from URL
+      const match = urlInput.match(/github\.com\/([^\/]+)\/([^\/\?#]+)/);
+      if (!match) { status.innerHTML = '<p style="color:var(--err);font-size:0.8rem;">Invalid GitHub URL. Expected: https://github.com/owner/repo</p>'; return; }
+      const owner = match[1];
+      const repo = match[2].replace(/\.git$/, '');
+
+      const btn = document.getElementById('github-btn');
+      btn.textContent = 'Scanning...';
+      btn.disabled = true;
+      status.innerHTML = '<p style="font-size:0.8rem;color:var(--fg-3);">Scanning repository for MCP tool definitions...</p>';
+
+      try {
+        // Try each known file location
+        let tools = [];
+        let foundFile = '';
+
+        for (const file of GITHUB_TOOL_FILES) {
+          try {
+            const resp = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/${file}`);
+            if (!resp.ok) {
+              // Try master branch
+              const resp2 = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/master/${file}`);
+              if (!resp2.ok) continue;
+              var content = await resp2.text();
+            } else {
+              var content = await resp.text();
+            }
+
+            // JSON files
+            if (file.endsWith('.json')) {
+              const data = JSON.parse(content);
+              const found = data.tools || (Array.isArray(data) ? data : (data.name ? [data] : []));
+              if (found.length > 0) { tools = found; foundFile = file; break; }
+            }
+
+            // TypeScript/JavaScript — extract tool definitions from server.tool() or .addTool()
+            if (file.endsWith('.ts') || file.endsWith('.js')) {
+              const toolMatches = content.match(/(?:\.tool|addTool)\s*\(\s*["'`]([^"'`]+)["'`]\s*,\s*["'`]([^"'`]+)["'`]/g);
+              if (toolMatches && toolMatches.length > 0) {
+                for (const m of toolMatches) {
+                  const parts = m.match(/(?:\.tool|addTool)\s*\(\s*["'`]([^"'`]+)["'`]\s*,\s*["'`]([^"'`]+)["'`]/);
+                  if (parts) {
+                    tools.push({ name: parts[1], description: parts[2] });
+                  }
+                }
+                if (tools.length > 0) { foundFile = file; break; }
+              }
+
+              // Also try to find zod schemas or inputSchema definitions
+              const schemaMatches = content.match(/name:\s*["'`]([^"'`]+)["'`].*?description:\s*["'`]([^"'`]+)["'`]/gs);
+              if (schemaMatches && schemaMatches.length > 0 && tools.length === 0) {
+                for (const m of schemaMatches) {
+                  const nameM = m.match(/name:\s*["'`]([^"'`]+)["'`]/);
+                  const descM = m.match(/description:\s*["'`]([^"'`]+)["'`]/);
+                  if (nameM && descM) {
+                    tools.push({ name: nameM[1], description: descM[1] });
+                  }
+                }
+                if (tools.length > 0) { foundFile = file; break; }
+              }
+            }
+          } catch { continue; }
+        }
+
+        if (tools.length === 0) {
+          status.innerHTML = `<p style="color:var(--warn);font-size:0.8rem;">No MCP tool definitions found in ${owner}/${repo}. Checked: ${GITHUB_TOOL_FILES.join(', ')}.</p>
+            <p style="font-size:0.75rem;color:var(--fg-4);margin-top:0.3rem;">Try the JSON tab and paste your tool definitions directly.</p>`;
+          btn.textContent = 'Score';
+          btn.disabled = false;
+          return;
+        }
+
+        status.innerHTML = `<p style="font-size:0.8rem;color:var(--ok);">Found ${tools.length} tool${tools.length > 1 ? 's' : ''} in <code>${foundFile}</code>. Scoring...</p>`;
+        const scored = tools.map(t => scoreToolBrowser(t));
+        renderResults(scored, `${owner}/${repo}`, `https://github.com/${owner}/${repo}`);
+      } catch (e) {
+        status.innerHTML = `<p style="color:var(--err);font-size:0.8rem;">Error: ${e.message}</p>`;
+      }
+      btn.textContent = 'Score';
+      btn.disabled = false;
+    }
+
+    document.getElementById('github-url').addEventListener('keydown', e => {
+      if (e.key === 'Enter') lookupGitHub();
     });
 
     // JSON scoring
@@ -339,7 +456,7 @@ import Layout from '../layouts/Layout.astro';
       return JSON.stringify({ name: ts.name, description: newDesc, inputSchema: newSchema }, null, 2);
     }
 
-    function renderResults(scored, serverLabel) {
+    function renderResults(scored, serverLabel, githubUrl) {
       const results = document.getElementById('results');
       const avg = scored.reduce((s, t) => s + t.total, 0) / scored.length;
       const sevC = { critical: 'var(--err)', warning: 'var(--warn)', info: 'var(--fg-4)' };
@@ -353,6 +470,16 @@ import Layout from '../layouts/Layout.astro';
             <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-2);">${serverLabel ? serverLabel + ' · ' : ''}${scored.length} tool${scored.length > 1 ? 's' : ''} analyzed</p>
+          ${githubUrl && avg < 85 ? `
+            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: var(--r); border: 1px solid var(--accent);">
+              <p style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">Want these fixes applied automatically?</p>
+              <p style="font-size: 0.75rem; color: var(--fg-3); margin-bottom: 0.5rem;">We can create a Pull Request with optimized tool descriptions for your repository.</p>
+              <a href="https://github.com/imhiroki/toolrank/issues/new?title=${encodeURIComponent('Fix PR request: ' + serverLabel)}&body=${encodeURIComponent('Please generate a fix PR for: ' + githubUrl + '\n\nCurrent score: ' + Math.round(avg) + '/100')}" target="_blank"
+                style="display:inline-block;padding:0.5rem 1rem;background:var(--accent);color:#fff;border-radius:var(--r);font-size:0.8rem;font-weight:600;text-decoration:none;">
+                Request Fix PR →
+              </a>
+            </div>
+          ` : ''}
         </div>`;
 
       for (const ts of scored) {

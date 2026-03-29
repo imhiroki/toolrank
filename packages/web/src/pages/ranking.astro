@@ -124,7 +124,7 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
                     <tr data-name={(s.display_name || s.server_name).toLowerCase()} data-level={(() => { if (s.total_score >= 85) return 'Dominant'; if (s.total_score >= 70) return 'Preferred'; if (s.total_score >= 50) return 'Selectable'; return 'Other'; })()} data-score={Math.round(s.total_score)} data-f={Math.round(s.findability)} data-c={Math.round(s.clarity)} data-p={Math.round(s.precision)} data-e={Math.round(s.efficiency)}>
                       <td style="color:var(--fg-4);">{i + 1}</td>
                       <td style="text-align:left;">
-                        <span style="font-weight:500;">{s.display_name || s.server_name}</span>
+                        <a href={`/ranking/${s.server_name}`} style="font-weight:500;color:var(--fg);text-decoration:none;">{s.display_name || s.server_name}</a>
                         {s.display_name && s.display_name !== s.server_name && (
                           <span class="hide-mobile" style="color:var(--fg-4);font-size:0.65rem;margin-left:0.4rem;">{s.server_name}</span>
                         )}
