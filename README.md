@@ -145,7 +145,10 @@ ToolRank is open source. The scoring logic is fully transparent and auditable.
 
 - **Report issues:** [GitHub Issues](https://github.com/imhiroki/toolrank/issues)
 - **Scoring methodology:** [packages/scoring/toolrank_score.py](packages/scoring/toolrank_score.py)
+- **Governance:** [GOVERNANCE.md](GOVERNANCE.md) · [CHANGELOG.md](CHANGELOG.md)
 - **ATO Framework:** [toolrank.dev/framework](https://toolrank.dev/framework)
+
+⭐ **Star this repo** if you find ToolRank useful — it helps others discover it.
 
 ## License
 

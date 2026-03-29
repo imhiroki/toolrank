@@ -12,19 +12,25 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
 <Layout
   title="MCP Server Quality Ranking"
   breadcrumbs={[{ label: "Ranking", href: "/ranking" }]}
-  description="Live ranking of MCP servers by ToolRank Score. See how AI agents evaluate tool quality across Findability, Clarity, Precision, and Efficiency. Updated weekly."
+  description="Live ranking of MCP servers by ToolRank Score. 4,000+ servers scanned, 73% invisible to AI agents. See how your tools compare across Findability, Clarity, Precision, and Efficiency. Updated daily."
 >
   <section style="padding: 3rem 0 1rem;">
     <div class="w" style="max-width: 900px;">
       <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Ecosystem ranking</h1>
       <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.6;">
         {hasData
-          ? `${dist.total || scores.length} MCP servers scored. Average: ${dist.average || '—'}/100.`
+          ? `${dist.total || scores.length} MCP servers scored out of 4,000+ scanned. Average: ${dist.average || '—'}/100.`
           : 'First ecosystem scan in progress. Rankings will appear automatically.'}
       </p>
+      {hasData && (
+        <p style="color: var(--fg-3); font-size: 0.8rem; margin-top: 0.5rem; line-height: 1.6;">
+          73% of MCP servers have no tool definitions — they are invisible to AI agents and cannot be scored. 
+          <a href="/score" style="color: var(--accent);">Check if your server is visible →</a>
+        </p>
+      )}
       {lastUpdated && (
         <p style="color: var(--fg-4); font-size: 0.7rem; margin-top: 0.25rem;">
-          Last scan: {lastUpdated} · Sources: Smithery + Official MCP Registry · Score v1.0.0 · Daily
+          Last scan: {lastUpdated} · Sources: Smithery + Official MCP Registry · Score v1.0.0 · Updated daily
         </p>
       )}
     </div>
@@ -157,12 +163,42 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
     </div>
   </section>
 
+  <!-- Level definitions -->
+  <section style="padding: 1rem 0;">
+    <div class="w" style="max-width: 900px;">
+      <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+        <p style="font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">Score levels</p>
+        <div style="font-size: 0.7rem; color: var(--fg-3); line-height: 1.8;">
+          <p><span style="color: var(--accent); font-weight: 600;">Dominant (85-100)</span> — Agent picks this tool first in competitive scenarios (~85% selection rate)</p>
+          <p><span style="color: var(--ok); font-weight: 600;">Preferred (70-84)</span> — Good quality, selected regularly (~13-40% selection rate)</p>
+          <p><span style="color: var(--warn); font-weight: 600;">Selectable (50-69)</span> — Functional but rarely chosen by agents (~2-13% selection rate)</p>
+          <p><span style="color: var(--fg-4); font-weight: 600;">Visible (25-49)</span> / <span style="color: var(--err); font-weight: 600;">Absent (0-24)</span> — Nearly invisible to AI agents</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Not listed CTA -->
+  <section style="padding: 1rem 0;">
+    <div class="w" style="max-width: 900px;">
+      <div style="border: 1px dashed var(--border); border-radius: var(--r); padding: 1.25rem; text-align: center;">
+        <p style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem;">Your server not listed?</p>
+        <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
+          If your MCP server isn't in this ranking, it likely has no tool definitions exposed — meaning AI agents can't discover or use it.
+        </p>
+        <a href="/score" style="display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent); color: #fff; border-radius: var(--r); font-size: 0.8rem; font-weight: 600; text-decoration: none;">
+          Check your server →
+        </a>
+      </div>
+    </div>
+  </section>
+
   <section style="padding: 0 0 3rem;">
     <div class="w" style="max-width: 900px; text-align: center;">
       <p style="font-size: 0.7rem; color: var(--fg-4);">
         Scored using open-source Level A engine.
         <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py" style="color:var(--fg-4);text-decoration:underline;">View scoring logic</a>.
-        Rankings update weekly.
+        Rankings update daily. Selection rates from <a href="/framework" style="color:var(--fg-4);text-decoration:underline;">500-round simulation (r=0.828)</a>.
       </p>
     </div>
   </section>
