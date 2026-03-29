@@ -524,16 +524,17 @@ import Layout from '../layouts/Layout.astro';
                   </div>
                 `).join('')}
               </div>
-              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem;">
+              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem; position: relative;">
                 <p style="font-size: 0.75rem; font-weight: 600; color: var(--fg-3); margin-bottom: 0.5rem;">Suggested rewrite</p>
-                <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.75rem; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; overflow-x: auto; white-space: pre-wrap;">${generateRewrite(ts)}</div>
-                <button onclick="navigator.clipboard.writeText(document.querySelector('[data-rewrite=\\'${ts.name}\\']')?.textContent || '');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy rewrite',1500)" style="margin-top: 0.5rem; padding: 0.3rem 0.6rem; font-size: 0.7rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--fg-3); cursor: pointer;">Copy rewrite</button>
+                <div style="filter: blur(5px); user-select: none; pointer-events: none;">
+                  <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.75rem; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; overflow-x: auto; white-space: pre-wrap;">${generateRewrite(ts)}</div>
+                </div>
+                <div style="margin-top: 0.75rem; padding: 0.85rem; border: 1px solid var(--accent); border-radius: var(--r); background: var(--accent-s); text-align: center;">
+                  <p style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.2rem;">Unlock optimized rewrites</p>
+                  <p style="font-size: 0.7rem; color: var(--fg-3); margin-bottom: 0.5rem;">Get copy-ready tool definitions with AI-powered descriptions, schemas, and usage context.</p>
+                  <a href="/pricing" style="display: inline-block; padding: 0.4rem 1rem; font-size: 0.75rem; font-weight: 600; border-radius: var(--r); background: var(--accent); color: #fff; text-decoration: none;">Upgrade to Pro →</a>
+                </div>
                 <span data-rewrite="${ts.name}" style="display:none;">${generateRewriteJSON(ts)}</span>
-              </div>
-              <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.5rem; background: var(--accent-s); padding: 1rem; border-radius: var(--r);">
-                <p style="font-size: 0.75rem; font-weight: 600; color: var(--accent); margin-bottom: 0.3rem;">Level C: AI-Powered Analysis</p>
-                <p style="font-size: 0.7rem; color: var(--fg-3); margin-bottom: 0.5rem;">Get Claude AI to analyze semantic quality, suggest optimal descriptions, and identify context gaps humans miss.</p>
-                <a href="/pricing" style="display: inline-flex; align-items: center; padding: 0.35rem 0.75rem; font-size: 0.7rem; font-weight: 600; border-radius: 6px; background: var(--accent); color: #fff; text-decoration: none;">Upgrade to Pro →</a>
               </div>
             ` : '<p style="font-size: 0.8rem; color: var(--ok);">No issues found. Your tool definition is well-optimized.</p>'}
           </div>`;

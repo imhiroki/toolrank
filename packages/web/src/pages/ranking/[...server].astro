@@ -130,17 +130,42 @@ const desc = current ? `${current.display_name || server} scores ${Math.round(cu
         <div class="w" style="max-width: 720px;">
           <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">{current.total_score >= 85 ? 'Optimization status' : 'How to improve this score'}</h2>
           <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            {suggestions.map(s => (
-              <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.85rem; display: flex; gap: 0.75rem; align-items: flex-start;">
-                <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-s); color: var(--fg-3); white-space: nowrap; margin-top: 0.1rem;">{s.dim}</span>
-                <div style="flex: 1;">
-                  <p style="font-size: 0.8rem; color: var(--fg-2);">{s.msg}</p>
-                  <p style="font-size: 0.65rem; color: var(--accent); margin-top: 0.15rem;">Expected impact: {s.impact}</p>
+            {suggestions.map((s, i) => (
+              i === 0 ? (
+                <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.85rem; display: flex; gap: 0.75rem; align-items: flex-start;">
+                  <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-s); color: var(--fg-3); white-space: nowrap; margin-top: 0.1rem;">{s.dim}</span>
+                  <div style="flex: 1;">
+                    <p style="font-size: 0.8rem; color: var(--fg-2);">{s.msg}</p>
+                    <p style="font-size: 0.65rem; color: var(--accent); margin-top: 0.15rem;">Expected impact: {s.impact}</p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div style="position: relative;">
+                  <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 0.85rem; display: flex; gap: 0.75rem; align-items: flex-start; filter: blur(5px); user-select: none; pointer-events: none;">
+                    <span style="font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--bg-s); color: var(--fg-3); white-space: nowrap; margin-top: 0.1rem;">{s.dim}</span>
+                    <div style="flex: 1;">
+                      <p style="font-size: 0.8rem; color: var(--fg-2);">{s.msg}</p>
+                      <p style="font-size: 0.65rem; color: var(--accent); margin-top: 0.15rem;">Expected impact: {s.impact}</p>
+                    </div>
+                  </div>
+                </div>
+              )
             ))}
           </div>
-          {current.total_score < 85 && (
+          {suggestions.length > 1 && (
+            <div style="margin-top: 0.75rem; padding: 1rem; border: 1px solid var(--accent); border-radius: var(--r); background: var(--accent-s); text-align: center;">
+              <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">
+                {suggestions.length - 1} more improvement{suggestions.length - 1 > 1 ? 's' : ''} available
+              </p>
+              <p style="font-size: 0.75rem; color: var(--fg-3); margin-bottom: 0.75rem;">
+                Unlock all fix suggestions, rewrite proposals, and priority recommendations.
+              </p>
+              <a href="/pricing" style="display: inline-block; padding: 0.5rem 1.25rem; background: var(--accent); color: #fff; border-radius: var(--r); font-size: 0.8rem; font-weight: 600; text-decoration: none;">
+                Upgrade to Pro →
+              </a>
+            </div>
+          )}
+          {current.total_score < 85 && suggestions.length <= 1 && (
             <p style="font-size: 0.75rem; color: var(--fg-3); margin-top: 0.75rem;">
               <a href="/score" style="color: var(--accent);">Score this server →</a> for line-by-line fixes with rewrite proposals.
             </p>
