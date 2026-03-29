@@ -70,7 +70,7 @@ ToolRank Score measures tools across four dimensions:
 
 3. **Add a badge** to your README from [toolrank.dev/badge](https://toolrank.dev/badge). Signal quality to both agents and developers.
 
-4. **Monitor over time.** ToolRank scans the ecosystem weekly. Your score updates automatically.
+4. **Monitor over time.** ToolRank scans the ecosystem daily. Your score updates automatically.
 
 ## The window
 

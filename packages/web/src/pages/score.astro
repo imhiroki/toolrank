@@ -555,11 +555,17 @@ import Layout from '../layouts/Layout.astro';
             <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https://toolrank.dev/score" target="_blank" rel="noopener">LinkedIn</a>
             <button class="share-btn" onclick="navigator.clipboard.writeText('My MCP tools scored ${Math.round(avg)}/100 on ToolRank https://toolrank.dev/score');this.textContent='Copied!'">Copy</button>
           </div>
-          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Next steps</p>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            ${avg >= 85 ? `<a href="/badge" style="font-size: 0.8rem;">Add a ToolRank badge to your README →</a>` : ''}
-            ${avg < 85 ? `<a href="/framework" style="font-size: 0.8rem;">Learn the ATO framework to improve your score →</a>` : ''}
-            <a href="/ranking" style="font-size: 0.8rem;">See how you compare in the ecosystem ranking →</a>
+          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">What to do next</p>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;">
+            ${avg < 85 ? `
+              <p style="color: var(--fg-2);">1. <strong>Apply the fixes above</strong> — copy the improved descriptions and update your tool definitions</p>
+              <p style="color: var(--fg-2);">2. <strong>Re-score</strong> — paste your updated JSON above to verify improvement</p>
+              <p style="color: var(--fg-2);">3. <a href="/docs/ci">Add CI lint</a> — catch quality regressions before merging</p>
+            ` : `
+              <p style="color: var(--fg-2);">1. <strong><a href="/badge">Add a ToolRank badge</a></strong> to your README — show that your tools are agent-optimized</p>
+              <p style="color: var(--fg-2);">2. <strong><a href="/docs/ci">Add CI lint</a></strong> — keep your score high as you add new tools</p>
+            `}
+            <p style="color: var(--fg-2);">${avg < 85 ? '4' : '3'}. <a href="/ranking">Check the ecosystem ranking</a> — see how you compare</p>
           </div>
         </div>`;
 

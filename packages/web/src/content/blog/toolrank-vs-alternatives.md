@@ -21,7 +21,7 @@ The MCP ecosystem now has several tools for evaluating tool quality. If you're a
 
 ### ToolRank
 
-ToolRank is an ecosystem-wide scoring platform. It scans 4,000+ servers weekly and maintains a public ranking. The scoring is deterministic (Level A: rule-based, zero LLM cost) with specific improvement suggestions and rewrite proposals.
+ToolRank is an ecosystem-wide scoring platform. It scans 4,000+ servers daily and maintains a public ranking. The scoring is deterministic (Level A: rule-based, zero LLM cost) with specific improvement suggestions and rewrite proposals.
 
 Strengths: ecosystem-wide data, time-series tracking, public ranking, badge system, transparent scoring logic.
 

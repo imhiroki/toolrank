@@ -7,6 +7,15 @@ const dist = await getScoreDistribution();
 const history = await getScanHistory(12);
 const hasData = scores.length > 0;
 const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+
+// Deduplicate: if 3+ servers share exact same F/C/P/E fingerprint, keep only first 2
+const fpCounts = new Map();
+const dedupedScores = scores.filter(s => {
+  const fp = `${Math.round(s.findability)}-${Math.round(s.clarity)}-${Math.round(s.precision)}-${Math.round(s.efficiency)}`;
+  const count = (fpCounts.get(fp) || 0) + 1;
+  fpCounts.set(fp, count);
+  return count <= 2;
+});
 ---
 
 <Layout
@@ -76,7 +85,7 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
             })}
           </div>
           <p style="font-size: 0.6rem; color: var(--fg-4); margin-top: 0.75rem;">
-            Average score per weekly scan. {history.length < 3 ? 'More data points accumulate each week.' : ''}
+            Average score per daily scan. {history.length < 3 ? 'More data points accumulate each day.' : ''}
           </p>
         </div>
       </div>
@@ -124,7 +133,7 @@ const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString(
                 </tr>
               </thead>
               <tbody>
-                {scores.map((s, i) => {
+                {dedupedScores.map((s, i) => {
                   const lvlC = { 'Dominant': 'var(--accent)', 'Preferred': 'var(--ok)', 'Selectable': 'var(--warn)', 'Visible': 'var(--fg-4)', 'Absent': 'var(--err)' };
                   return (
                     <tr data-name={(s.display_name || s.server_name).toLowerCase()} data-level={(() => { if (s.total_score >= 85) return 'Dominant'; if (s.total_score >= 70) return 'Preferred'; if (s.total_score >= 50) return 'Selectable'; return 'Other'; })()} data-score={Math.round(s.total_score)} data-f={Math.round(s.findability)} data-c={Math.round(s.clarity)} data-p={Math.round(s.precision)} data-e={Math.round(s.efficiency)}>
