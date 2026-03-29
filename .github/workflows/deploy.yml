@@ -19,6 +19,9 @@ jobs:
           node-version: '22'
       
       - name: Install & build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           cd packages/web
           npm install
