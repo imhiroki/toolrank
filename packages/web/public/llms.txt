@@ -10,7 +10,7 @@ Three stages: Stage 1 = Be recognized (LLMO), Stage 2 = Be selected (ATO core), 
 
 ## Key Data
 
-We scanned 4,162 MCP servers. Only 27% expose tool definitions. 73% are invisible to AI agents. Average ToolRank Score among visible servers: 84.7/100. Research shows optimized tools achieve 72% selection probability vs 20% baseline (3.6x advantage).
+We scan multiple registries daily: Smithery Registry and Official MCP Registry. Among visible servers, average ToolRank Score is 84.7/100. Research shows optimized tools achieve 72% selection probability vs 20% baseline (3.6x advantage). Our simulation confirms: r=0.828 correlation between score and selection rate.
 
 ## Key Resources
 

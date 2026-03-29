@@ -40,6 +40,7 @@ logging.basicConfig(
 log = logging.getLogger("scanner")
 
 SMITHERY_BASE = "https://registry.smithery.ai"
+OFFICIAL_BASE = "https://registry.modelcontextprotocol.io"
 DATA_DIR = Path(__file__).parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -105,6 +106,8 @@ def fetch_server_list(client: httpx.Client, page_size: int = 50, max_servers: in
         if not page_servers:
             break
 
+        for s in page_servers:
+            s["_source"] = "smithery"
         servers.extend(page_servers)
 
         pagination = data.get("pagination", {})
@@ -124,6 +127,87 @@ def fetch_server_list(client: httpx.Client, page_size: int = 50, max_servers: in
         time.sleep(LIST_DELAY)
 
     return servers
+
+
+def fetch_official_registry(client: httpx.Client, max_servers: int = None) -> list[dict]:
+    """Fetch servers from Official MCP Registry (registry.modelcontextprotocol.io)."""
+    servers = []
+
+    for version in ["v0.1", "v0"]:
+        url = f"{OFFICIAL_BASE}/{version}/servers?limit=100"
+        cursor = None
+
+        while True:
+            fetch_url = f"{url}&cursor={cursor}" if cursor else url
+            try:
+                resp = client.get(fetch_url, timeout=30)
+                if resp.status_code == 404:
+                    break
+                if resp.status_code == 403:
+                    log.warning(f"[official/{version}] 403 Forbidden — may need auth")
+                    break
+                resp.raise_for_status()
+                data = resp.json()
+
+                batch = data.get("servers", data.get("items", []))
+                if isinstance(data, list):
+                    batch = data
+
+                for s in batch:
+                    # Normalize to Smithery-like format for downstream compatibility
+                    s["_source"] = "official"
+                    if "qualified_name" in s and "qualifiedName" not in s:
+                        s["qualifiedName"] = s["qualified_name"]
+                    if "qualifiedName" not in s:
+                        s["qualifiedName"] = s.get("name", s.get("id", ""))
+
+                servers.extend(batch)
+                log.info(f"[official/{version}] +{len(batch)} servers (total: {len(servers)})")
+
+                if max_servers and len(servers) >= max_servers:
+                    return servers[:max_servers]
+
+                cursor = (data.get("metadata", {}).get("nextCursor")
+                         or data.get("nextCursor"))
+                if not cursor:
+                    break
+                time.sleep(LIST_DELAY)
+
+            except Exception as e:
+                log.warning(f"[official/{version}] Error: {e}")
+                break
+
+        if servers:
+            break  # Got data from this version, don't try others
+
+    return servers
+
+
+def merge_registries(smithery: list[dict], official: list[dict]) -> list[dict]:
+    """Merge servers from multiple registries. Official takes priority on duplicates."""
+    seen = {}
+
+    # Smithery first
+    for s in smithery:
+        qn = s.get("qualifiedName", "").lower().strip()
+        if qn:
+            seen[qn] = s
+
+    # Official overrides (but keep Smithery detail data if available)
+    added_from_official = 0
+    for s in official:
+        qn = s.get("qualifiedName", "").lower().strip()
+        if not qn:
+            continue
+        if qn not in seen:
+            seen[qn] = s
+            added_from_official += 1
+        else:
+            # Mark as also in official
+            seen[qn]["_also_in_official"] = True
+
+    log.info(f"Merged: {len(smithery)} smithery + {len(official)} official = {len(seen)} unique ({added_from_official} new from official)")
+    return list(seen.values())
 
 
 def load_known_servers() -> set[str]:
@@ -180,7 +264,7 @@ def save_supabase(results: list[dict], summary: dict):
         try:
             # 1. Upsert server and get ID back
             server_data = {
-                "source": "smithery",
+                "source": result.get("_source", "smithery"),
                 "server_name": result["server_name"],
                 "display_name": result.get("display_name", result["server_name"]),
                 "description": result.get("server_description", ""),
@@ -280,6 +364,7 @@ def score_single_server(client: httpx.Client, server: dict) -> dict | None:
         score_dict["use_count"] = server.get("useCount", 0)
         score_dict["verified"] = server.get("verified", False)
         score_dict["is_deployed"] = server.get("isDeployed", False)
+        score_dict["_source"] = server.get("_source", "smithery")
         score_dict["server_meta"] = {
             "id": server.get("id"),
             "qualifiedName": qname,
@@ -293,7 +378,8 @@ def score_single_server(client: httpx.Client, server: dict) -> dict | None:
 
 
 def run_scan(limit: int = None, dry_run: bool = False, use_supabase: bool = False,
-             verbose: bool = False, force_full: bool = False, force_diff: bool = False):
+             verbose: bool = False, force_full: bool = False, force_diff: bool = False,
+             multi: bool = False):
     """Main scan orchestrator."""
     client = httpx.Client(timeout=30)
 
@@ -308,12 +394,20 @@ def run_scan(limit: int = None, dry_run: bool = False, use_supabase: bool = Fals
     else:
         scan_mode = "full" if is_sunday else "diff"
 
-    log.info(f"Scan mode: {scan_mode} (Sunday={is_sunday})")
+    log.info(f"Scan mode: {scan_mode} (Sunday={is_sunday}, multi={multi})")
 
-    # Step 1: Get server list (lightweight, just metadata)
+    # Step 1: Get server list
     log.info("Step 1: Fetching server list from Smithery...")
     servers = fetch_server_list(client, max_servers=limit)
-    log.info(f"Got {len(servers)} servers from registry")
+    log.info(f"Got {len(servers)} servers from Smithery")
+
+    # Multi-registry: also fetch from Official MCP Registry
+    if multi:
+        log.info("Step 1b: Fetching from Official MCP Registry...")
+        official = fetch_official_registry(client, max_servers=limit)
+        log.info(f"Got {len(official)} servers from Official Registry")
+        servers = merge_registries(servers, official)
+        log.info(f"Total after merge: {len(servers)} unique servers")
 
     # Step 2: Determine which servers to scan in detail
     if scan_mode == "diff":
@@ -445,6 +539,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", action="store_true", help="Print each score")
     parser.add_argument("--full", action="store_true", help="Force full scan")
     parser.add_argument("--diff", action="store_true", help="Force diff scan")
+    parser.add_argument("--multi", action="store_true", help="Scan multiple registries (Official MCP Registry + Smithery)")
     args = parser.parse_args()
 
     run_scan(
@@ -454,4 +549,5 @@ if __name__ == "__main__":
         verbose=args.verbose,
         force_full=args.full,
         force_diff=args.diff,
+        multi=args.multi,
     )
