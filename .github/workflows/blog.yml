@@ -56,3 +56,23 @@ jobs:
           git diff --cached --quiet && echo "No new article" && exit 0
           git commit -m "Auto-generate daily blog: $(date +%Y-%m-%d)"
           git push
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build & Deploy
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          cd packages/web
+          npm install
+          npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy packages/web/dist --project-name=toolrank
