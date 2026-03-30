@@ -161,7 +161,14 @@ Write blog articles that are:
 - SEO-optimized: use natural keyword placement for "MCP tools", "AI agent", "tool optimization"
 
 Format: Astro-compatible Markdown with frontmatter.
-Required frontmatter fields: title, description, pubDate (YYYY-MM-DD), tags (array)
+Required frontmatter fields (EXACTLY these names, no others):
+---
+title: "Article Title"
+description: "A one-sentence summary"
+date: "YYYY-MM-DD"
+---
+
+Do NOT include tags, pubDate, author, or any other frontmatter fields. Only title, description, and date.
 
 IMPORTANT:
 - Do NOT use placeholder or generic advice. Use the REAL data provided.
