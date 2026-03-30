@@ -161,6 +161,12 @@ def run(limit=5, dry_run=False, min_score=50, max_score=69):
             log.info(f"  Skip {repo_full}: contacted within last 30 days")
             continue
 
+        # Skip test/tutorial/demo servers
+        sname = (srv.get('display_name', '') + srv.get('server_name', '')).lower()
+        if any(x in sname for x in ['test', 'demo', 'hello', 'calculator', 'vsf', 'tutorial', 'example', 'sample']):
+            log.info(f"  Skip {repo_full}: test/tutorial server")
+            continue
+
         score = round(srv['total_score'])
         level = 'Selectable' if score >= 50 else 'Visible'
         pct = 92 if score < 70 else 75
@@ -192,7 +198,7 @@ def run(limit=5, dry_run=False, min_score=50, max_score=69):
                     "Accept": "application/vnd.github.v3+json",
                     "User-Agent": "ToolRank/0.2 (+https://toolrank.dev)",
                 },
-                json={"title": title, "body": body, "labels": ["toolrank", "mcp", "quality"]},
+                json={"title": title, "body": body},
             )
             if resp.status_code == 201:
                 log.info(f"  ✅ Created issue on {owner}/{repo} (score {score})")
