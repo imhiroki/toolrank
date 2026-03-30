@@ -324,11 +324,18 @@ import Layout from '../layouts/Layout.astro';
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 2: Selection Performance</p>
             <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Q2 2026</span>
           </div>
-          <p style="font-size: 0.8rem; color: var(--fg-3);">
-            LLM-based selection testing using Claude API. Measures how often agents actually pick your tool 
-            when presented alongside alternatives. Local heuristic simulation (r = 0.828) is a prototype; 
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
+            LLM-based selection testing using Claude API. Local heuristic simulation (r = 0.828) is a prototype; 
             this layer will use real LLM selection decisions.
           </p>
+          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification (draft):</p>
+          <ul style="font-size: 0.7rem; color: var(--fg-4); line-height: 1.7; padding-left: 1rem; margin: 0;">
+            <li>Model: Claude 3.5 Sonnet (fixed version for reproducibility)</li>
+            <li>Method: 100-round tournament per tool. Each round presents 3-5 competing tools for a task.</li>
+            <li>Metric: Selection rate (% of rounds tool is chosen), rank position, confidence interval</li>
+            <li>Conditions: Prompt, model version, temperature, competitor set — all published and frozen per evaluation cycle</li>
+            <li>Reproducibility: Full evaluation scripts and prompts open-sourced</li>
+          </ul>
         </div>
 
         <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
@@ -336,10 +343,17 @@ import Layout from '../layouts/Layout.astro';
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 3: Execution Reliability</p>
             <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">H2 2026</span>
           </div>
-          <p style="font-size: 0.8rem; color: var(--fg-3);">
-            Runtime success rate, response quality, and error handling. Measures whether tools 
-            work reliably after being selected. Requires runtime monitoring infrastructure.
+          <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
+            Runtime success rate, response quality, and error handling. Requires runtime monitoring infrastructure.
           </p>
+          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification (draft):</p>
+          <ul style="font-size: 0.7rem; color: var(--fg-4); line-height: 1.7; padding-left: 1rem; margin: 0;">
+            <li>Success rate: % of invocations returning valid, non-error responses</li>
+            <li>Timeout rate: % of invocations exceeding 30s response time</li>
+            <li>Schema conformance: % of responses matching declared output schema</li>
+            <li>Error quality: Whether error messages are actionable (not just "500 Internal Error")</li>
+            <li>Uptime: Availability measured via periodic health checks (if server is remotely hosted)</li>
+          </ul>
         </div>
       </div>
     </div>

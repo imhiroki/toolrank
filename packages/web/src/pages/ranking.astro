@@ -8,18 +8,47 @@ const history = await getScanHistory(12);
 const hasData = scores.length > 0;
 const lastUpdated = hasData ? new Date(scores[0].scanned_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
 
-// Deduplicate + filter test/tutorial servers
-const fpCounts = new Map();
-const TEST_PATTERNS = /^(vsf|vsfclub|weathermcp|mcp-test|test-|demo|hello)/i;
+// --- Data cleaning: dedup, test removal, canonical ID ---
+const TEST_PATTERNS = /^(vsf|vsfclub|weathermcp|mcp-test|test[-_]|demo[-_]?|hello[-_]|my[-_]?first|sample|example|tutorial|calculator[-_]mcp|test\d|bmp\d|aic[-_]test)/i;
+const NOISE_NAMES = new Set(['test', 'demo', 'hello', 'example', 'sample', 'tutorial']);
+
+// Canonical ID: normalize server names to catch duplicates like Rube/Rube1, Context7 variants
+function canonicalId(s: any): string {
+  const name = (s.server_name || '').toLowerCase().replace(/[-_\s]/g, '');
+  // Strip trailing numbers for dedup (Rube vs Rube1)
+  const base = name.replace(/\d+$/, '');
+  // Use repo as canonical if available (same repo = same server)
+  const desc = (s.description || '').toLowerCase();
+  return `${base}::${s.source || ''}`;
+}
+
+const seen = new Map<string, number>();
+const fpCounts = new Map<string, number>();
+
 const dedupedScores = scores.filter(s => {
-  // Filter out obvious test/tutorial servers
   const name = s.display_name || s.server_name || '';
-  if (TEST_PATTERNS.test(name.split('/').pop() || '')) return false;
-  // Fingerprint dedup: same F/C/P/E = keep max 2
+  const namePart = (s.server_name || '').split('/').pop() || '';
+
+  // 1. Filter test/tutorial/demo servers
+  if (TEST_PATTERNS.test(namePart)) return false;
+  if (NOISE_NAMES.has(namePart.toLowerCase())) return false;
+
+  // 2. Filter servers with no meaningful name
+  if (namePart.length < 3) return false;
+
+  // 3. Canonical ID dedup: same base name from same source = keep first only
+  const cid = canonicalId(s);
+  const cidCount = (seen.get(cid) || 0) + 1;
+  seen.set(cid, cidCount);
+  if (cidCount > 1) return false;
+
+  // 4. Fingerprint dedup: same F/C/P/E = keep max 2
   const fp = `${Math.round(s.findability)}-${Math.round(s.clarity)}-${Math.round(s.precision)}-${Math.round(s.efficiency)}`;
-  const count = (fpCounts.get(fp) || 0) + 1;
-  fpCounts.set(fp, count);
-  return count <= 2;
+  const fpCount = (fpCounts.get(fp) || 0) + 1;
+  fpCounts.set(fp, fpCount);
+  if (fpCount > 2) return false;
+
+  return true;
 });
 ---
 

@@ -53,16 +53,37 @@ Planned:
 If you believe your server's score is inaccurate:
 
 1. **Check the score page**: [toolrank.dev/score](https://toolrank.dev/score) shows specific issues
-2. **Open a GitHub Issue**: [github.com/imhiroki/toolrank/issues](https://github.com/imhiroki/toolrank/issues)
-3. **Include your tool definition JSON** for reproducibility
+2. **Open a GitHub Issue** using the [Score Dispute template](https://github.com/imhiroki/toolrank/issues/new?template=score-dispute.md)
+3. **Include**: server name, expected score, actual score, and your tool definition JSON
 4. **Response time**: Issues are reviewed within 7 days
+5. **Outcome**: If the dispute is valid, score logic is patched and a CHANGELOG entry is added
 
-## Future: Advisory Board
+## Change Notice Policy
 
-As ToolRank grows, we plan to establish an advisory board of 3-5 MCP ecosystem participants to:
-- Review major scoring methodology changes before release
-- Provide input on weight calibration
-- Ensure neutrality and fairness
+**MAJOR changes** (weight restructure, new dimensions, methodology shifts):
+- Announced via GitHub Discussion at least **14 days** before release
+- Include: rationale, before/after impact analysis, and migration guidance
+- Existing scores are re-calculated and diff published
+
+**MINOR changes** (new checks, threshold adjustments):
+- Announced via CHANGELOG at time of release
+- Include: what changed, which servers are affected, and expected score impact
+
+**Weight calibration** (weekly auto-updates):
+- All weight changes logged in `weights.json` with timestamp
+- If any single weight changes by >5 points, a GitHub Discussion is opened explaining why
+
+## External Review
+
+**Current state**: ToolRank is maintained by a single developer ([@imhiroki](https://github.com/imhiroki)).
+
+**Advisory board criteria** (to be established when GitHub Stars reach 50+):
+- 3-5 participants from the MCP ecosystem (server developers, registry operators, framework maintainers)
+- Required review for MAJOR version changes
+- Quarterly scoring methodology review
+- Public meeting notes
+
+**How to become a reviewer**: Open a GitHub Issue expressing interest. Requirements: active MCP server developer or ecosystem contributor.
 
 ## Contact
 
