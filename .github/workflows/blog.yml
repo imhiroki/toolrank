@@ -2,7 +2,7 @@ name: Daily Blog
 
 on:
   schedule:
-    - cron: '0 23 * * 1-6'
+    - cron: '0 23 * * 0-4'  # 08:00 JST Mon-Fri
   workflow_dispatch:
     inputs:
       type:
@@ -11,12 +11,12 @@ on:
         type: choice
         options:
           - auto
-          - new_servers
-          - category_spotlight
-          - teardown
-          - common_mistakes
-          - score_movers
-          - concept_deep_dive
+          - pulse
+          - spotlight
+          - movers
+          - category
+          - tips
+          - monthly
 
 jobs:
   generate:
@@ -34,10 +34,14 @@ jobs:
       - name: Generate article
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           TYPE="${{ github.event.inputs.type || 'auto' }}"
           if [ "$TYPE" = "auto" ]; then
             python packages/scanner/auto_blog.py
+          elif [ "$TYPE" = "monthly" ]; then
+            python packages/scanner/auto_blog.py --monthly
           else
             python packages/scanner/auto_blog.py --type "$TYPE"
           fi
@@ -48,5 +52,5 @@ jobs:
           git config user.email "bot@toolrank.dev"
           git add packages/web/src/content/blog/
           git diff --cached --quiet && echo "No new article" && exit 0
-          git commit -m "Auto-generate daily blog post"
+          git commit -m "Auto-generate daily blog: $(date +%Y-%m-%d)"
           git push
