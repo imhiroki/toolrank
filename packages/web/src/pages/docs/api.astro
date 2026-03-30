@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout
+  title="API Documentation — ToolRank"
+  breadcrumbs={[{ label: "Docs", href: "/docs/ci" }, { label: "API", href: "/docs/api" }]}
+  description="ToolRank REST API for scoring MCP tool definitions. POST JSON, get scores with fix suggestions. Free for up to 100 requests/hour."
+>
+  <section style="padding: 3rem 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem;">API</h1>
+      <p style="color: var(--fg-2); font-size: 1rem; line-height: 1.7;">
+        Score MCP tool definitions programmatically. Send JSON, get scores with specific fix suggestions.
+      </p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Score tools</h2>
+      <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.5rem 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.7rem; font-weight: 700; color: var(--ok); padding: 0.15rem 0.4rem; background: var(--ok)15; border-radius: 4px;">POST</span>
+        <code style="font-size: 0.8rem; color: var(--fg);">https://mcp.toolrank.dev/api/score</code>
+      </div>
+
+      <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Request body</p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.6; font-family: var(--mono); margin-bottom: 1rem;"><code>{`{
+  "tools": [
+    {
+      "name": "search_web",
+      "description": "Searches the web for current information.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "description": "Search query" }
+        },
+        "required": ["query"]
+      }
+    }
+  ]
+}`}</code></pre>
+
+      <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Response</p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.6; font-family: var(--mono); margin-bottom: 1rem;"><code>{`{
+  "score": 88.5,
+  "level": "Dominant",
+  "percentile": 36,
+  "tools": [
+    {
+      "name": "search_web",
+      "score": 88.5,
+      "level": "Dominant",
+      "dimensions": {
+        "findability": 23,
+        "clarity": 28,
+        "precision": 22,
+        "efficiency": 15
+      },
+      "issues": [
+        {
+          "dim": "clarity",
+          "sev": "warning",
+          "msg": "No usage context",
+          "fix": "Add 'Use this when...'",
+          "impact": 5
+        }
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}`}</code></pre>
+
+      <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">cURL example</p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.6; font-family: var(--mono); margin-bottom: 1.5rem;"><code>{`curl -X POST https://mcp.toolrank.dev/api/score \\
+  -H "Content-Type: application/json" \\
+  -d '{"tools": [{"name": "my_tool", "description": "Does something"}]}'`}</code></pre>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">OG Image</h2>
+      <p style="font-size: 0.85rem; color: var(--fg-2); margin-bottom: 1rem;">Generate scorecard SVGs for social sharing.</p>
+      <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.5rem 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.7rem; font-weight: 700; color: #3b82f6; padding: 0.15rem 0.4rem; background: #3b82f615; border-radius: 4px;">GET</span>
+        <code style="font-size: 0.8rem; color: var(--fg);">https://mcp.toolrank.dev/og/{`{server}`}.svg?score=95&level=Dominant</code>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--fg-3);">Returns an SVG scorecard image. Use as og:image for social media previews.</p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Embed widget</h2>
+      <p style="font-size: 0.85rem; color: var(--fg-2); margin-bottom: 1rem;">Add a ToolRank scorecard to any page with one script tag.</p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.6; font-family: var(--mono); margin-bottom: 1rem;"><code>{`<script src="https://mcp.toolrank.dev/embed.js"
+  data-server="brave"
+  data-score="95"
+  data-level="Dominant">
+</script>`}</code></pre>
+      <p style="font-size: 0.8rem; color: var(--fg-3);">Renders a compact scorecard linking to the server's detail page.</p>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Rate limits</h2>
+      <div style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.8;">
+        <p><strong>Free:</strong> 100 requests/hour per IP</p>
+        <p><strong>Pro:</strong> 1,000 requests/month (with API key)</p>
+        <p><strong>Team:</strong> 10,000 requests/month</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Other endpoints</h2>
+      <div style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.8;">
+        <p><strong>MCP Server:</strong> <code>POST https://mcp.toolrank.dev/mcp</code> — JSON-RPC for MCP clients (Claude Code, Cursor)</p>
+        <p><strong>Badge:</strong> <code>GET https://badge.toolrank.dev/{`{server}`}.svg</code> — Dynamic score badge</p>
+        <p><strong>npx:</strong> <code>npx @toolrank/mcp-server</code> — Local MCP server</p>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--fg-4); margin-top: 1rem;">
+        Score version: v1.0.0 · <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scoring/toolrank_score.py" style="color: var(--fg-4); text-decoration: underline;">Open source scoring engine</a>
+      </p>
+    </div>
+  </section>
+</Layout>

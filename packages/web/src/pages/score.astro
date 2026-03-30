@@ -468,17 +468,47 @@ import Layout from '../layouts/Layout.astro';
       const sevI = { critical: '✗', warning: '⚠', info: 'ℹ' };
       const lvlC = ['var(--err)', 'var(--warn)', 'var(--fg-3)', 'var(--ok)', 'var(--accent)'];
 
+      // Calculate percentile (based on known distribution: avg 85.7, most between 70-97)
+      const percentile = avg >= 95 ? 3 : avg >= 90 ? 10 : avg >= 85 ? 36 : avg >= 80 ? 55 : avg >= 70 ? 75 : avg >= 50 ? 92 : 98;
+      const levelName = avg >= 85 ? 'Dominant' : avg >= 70 ? 'Preferred' : avg >= 50 ? 'Selectable' : 'Needs work';
+
+      const shareText = serverLabel
+        ? `${serverLabel} scores ${Math.round(avg)}/100 on ToolRank (top ${percentile}% of MCP servers) 🏆`
+        : `My MCP tools scored ${Math.round(avg)}/100 on ToolRank (top ${percentile}%) 🏆`;
+
       let h = `
         <div style="padding: 1.5rem; border: 2px solid var(--accent); border-radius: var(--r); margin-bottom: 1.5rem; background: var(--accent-s);">
-          <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem;">
-            <span style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${Math.round(avg)}</span>
-            <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+              <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">${Math.round(avg)}</span>
+                <span style="font-size: 1rem; color: var(--fg-4);">/ 100</span>
+              </div>
+              <p style="font-size: 0.8rem; color: var(--fg-2);">${serverLabel ? serverLabel + ' · ' : ''}${scored.length} tool${scored.length > 1 ? 's' : ''} · ${levelName}</p>
+            </div>
+            <div style="text-align: center; padding: 0.5rem 1rem; background: var(--bg); border-radius: var(--r); border: 1px solid var(--border);">
+              <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">Top ${percentile}%</p>
+              <p style="font-size: 0.6rem; color: var(--fg-4);">of MCP servers</p>
+            </div>
           </div>
-          <p style="font-size: 0.8rem; color: var(--fg-2);">${serverLabel ? serverLabel + ' · ' : ''}${scored.length} tool${scored.length > 1 ? 's' : ''} analyzed</p>
+
+          <!-- Share card -->
+          <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: var(--r); border: 1px solid var(--border);">
+            <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-3); margin-bottom: 0.5rem;">Share your score</p>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=https://toolrank.dev/score" target="_blank" rel="noopener"
+                style="padding: 0.4rem 0.8rem; background: #000; color: #fff; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-decoration: none;">Post on 𝕏</a>
+              <a href="https://www.linkedin.com/sharing/share-offsite/?url=https://toolrank.dev/score" target="_blank" rel="noopener"
+                style="padding: 0.4rem 0.8rem; background: #0077B5; color: #fff; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-decoration: none;">LinkedIn</a>
+              <button onclick="navigator.clipboard.writeText('${shareText.replace(/'/g, "\\'")} https://toolrank.dev/score');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)"
+                style="padding: 0.4rem 0.8rem; background: var(--bg-s); color: var(--fg-2); border: 1px solid var(--border); border-radius: 6px; font-size: 0.7rem; font-weight: 600; cursor: pointer;">Copy</button>
+            </div>
+          </div>
+
           ${githubUrl && avg < 85 ? `
-            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: var(--r); border: 1px solid var(--accent);">
+            <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg); border-radius: var(--r); border: 1px solid var(--accent);">
               <p style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">Want these fixes applied automatically?</p>
-              <p style="font-size: 0.75rem; color: var(--fg-3); margin-bottom: 0.5rem;">We can create a Pull Request with optimized tool descriptions for your repository.</p>
+              <p style="font-size: 0.75rem; color: var(--fg-3); margin-bottom: 0.5rem;">We can create a Pull Request with optimized tool descriptions.</p>
               <a href="https://github.com/imhiroki/toolrank/issues/new?title=${encodeURIComponent('Fix PR request: ' + serverLabel)}&body=${encodeURIComponent('Please generate a fix PR for: ' + githubUrl + '\n\nCurrent score: ' + Math.round(avg) + '/100')}" target="_blank"
                 style="display:inline-block;padding:0.5rem 1rem;background:var(--accent);color:#fff;border-radius:var(--r);font-size:0.8rem;font-weight:600;text-decoration:none;">
                 Request Fix PR →
@@ -550,23 +580,24 @@ import Layout from '../layouts/Layout.astro';
               : `At ${Math.round(avg)}/100, agents almost never select tools like this (<strong style="color: var(--err);">&lt;2%</strong>).`}
             <span style="font-size: 0.7rem; color: var(--fg-4);"> Based on 500-round simulation (r=0.828). <a href="/framework">Methodology →</a></span>
           </p>
-          <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">Share your score</p>
-          <div class="share-bar" style="margin-bottom: 1rem;">
-            <a class="share-btn" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(`My MCP tools scored ${Math.round(avg)}/100 on ToolRank`)}&url=https://toolrank.dev/score" target="_blank" rel="noopener">𝕏 Share</a>
-            <a class="share-btn" href="https://www.linkedin.com/sharing/share-offsite/?url=https://toolrank.dev/score" target="_blank" rel="noopener">LinkedIn</a>
-            <button class="share-btn" onclick="navigator.clipboard.writeText('My MCP tools scored ${Math.round(avg)}/100 on ToolRank https://toolrank.dev/score');this.textContent='Copied!'">Copy</button>
-          </div>
           <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;">What to do next</p>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8rem;">
-            ${avg < 85 ? `
-              <p style="color: var(--fg-2);">1. <strong>Apply the fixes above</strong> — copy the improved descriptions and update your tool definitions</p>
+            ${avg >= 85 ? `
+              <div style="padding: 0.75rem; border: 2px solid var(--accent); border-radius: var(--r); background: var(--accent-s);">
+                <p style="color: var(--fg); font-weight: 600;">1. Add a ToolRank badge to your README</p>
+                <p style="font-size: 0.75rem; color: var(--fg-3); margin: 0.25rem 0 0.5rem;">Show developers and agents that your tools are top-tier.</p>
+                <code style="display: block; font-size: 0.7rem; padding: 0.5rem; background: var(--bg); border-radius: 4px; overflow-x: auto;">[![ToolRank](https://toolrank.dev/badge/dominant.svg)](https://toolrank.dev/ranking)</code>
+                <button onclick="navigator.clipboard.writeText('[![ToolRank](https://toolrank.dev/badge/dominant.svg)](https://toolrank.dev/ranking)');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy badge markdown',1500)"
+                  style="margin-top: 0.4rem; padding: 0.3rem 0.6rem; font-size: 0.7rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--fg-3); cursor: pointer;">Copy badge markdown</button>
+              </div>
+              <p style="color: var(--fg-2);">2. <a href="/docs/ci">Add CI lint</a> — keep your score high as you add new tools</p>
+            ` : `
+              <p style="color: var(--fg-2);">1. <strong>Apply the fixes above</strong> — update your tool definitions with the improvements</p>
               <p style="color: var(--fg-2);">2. <strong>Re-score</strong> — paste your updated JSON above to verify improvement</p>
               <p style="color: var(--fg-2);">3. <a href="/docs/ci">Add CI lint</a> — catch quality regressions before merging</p>
-            ` : `
-              <p style="color: var(--fg-2);">1. <strong><a href="/badge">Add a ToolRank badge</a></strong> to your README — show that your tools are agent-optimized</p>
-              <p style="color: var(--fg-2);">2. <strong><a href="/docs/ci">Add CI lint</a></strong> — keep your score high as you add new tools</p>
+              <p style="color: var(--fg-2);">4. Score 85+ → <a href="/badge">Get your badge</a> for your README</p>
             `}
-            <p style="color: var(--fg-2);">${avg < 85 ? '4' : '3'}. <a href="/ranking">Check the ecosystem ranking</a> — see how you compare</p>
+            <p style="color: var(--fg-2);">${avg >= 85 ? '3' : '5'}. <a href="/ranking">Check the ecosystem ranking</a> — you're in the top ${percentile}%</p>
           </div>
         </div>`;
 

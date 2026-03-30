@@ -49,6 +49,8 @@ const lvlC: Record<string, string> = { Dominant: 'var(--accent)', Preferred: 'va
 
 const selRate = current ? (current.total_score >= 85 ? '~85%' : current.total_score >= 70 ? '~13-40%' : current.total_score >= 50 ? '~2-13%' : '<2%') : '—';
 
+const percentile = current ? (current.total_score >= 95 ? 3 : current.total_score >= 90 ? 10 : current.total_score >= 85 ? 36 : current.total_score >= 80 ? 55 : current.total_score >= 70 ? 75 : current.total_score >= 50 ? 92 : 98) : 50;
+
 const dims = current ? [
   { label: 'Findability', val: current.findability, max: 25, desc: 'Can AI agents discover this tool? Measures naming quality, keyword overlap with queries, and registry presence.' },
   { label: 'Clarity', val: current.clarity, max: 35, desc: 'Can agents understand what this tool does? Measures description quality, action verbs, usage context ("Use this when..."), and return value documentation.' },
@@ -245,11 +247,22 @@ const desc = current ? `${current.display_name || server} scores ${Math.round(cu
           <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
             <a href="/score" style="padding: 0.6rem 1.25rem; background: var(--accent); color: #fff; border-radius: var(--r); font-size: 0.8rem; font-weight: 600; text-decoration: none;">Score this server</a>
             <a href="/ranking" style="padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.8rem; color: var(--fg); text-decoration: none;">← All rankings</a>
-            <a href="/badge" style="padding: 0.6rem 1.25rem; border: 1px solid var(--border); border-radius: var(--r); font-size: 0.8rem; color: var(--fg); text-decoration: none;">Get badge</a>
           </div>
-          <div class="share-bar">
-            <a class="share-btn" href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${current.display_name || server} scores ${Math.round(current.total_score)}/100 on ToolRank (${current.level_name})`)}&url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener">𝕏 Share</a>
-            <a class="share-btn" href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener">LinkedIn</a>
+
+          {current.total_score >= 85 && (
+            <div style="padding: 0.75rem; border: 1px solid var(--accent); border-radius: var(--r); background: var(--accent-s); margin-bottom: 1rem;">
+              <p style="font-size: 0.8rem; font-weight: 600; margin-bottom: 0.3rem;">Add ToolRank badge to this server's README</p>
+              <code style="display: block; font-size: 0.65rem; padding: 0.4rem; background: var(--bg); border-radius: 4px; margin: 0.3rem 0; overflow-x: auto; white-space: nowrap;">[![ToolRank](https://toolrank.dev/badge/dominant.svg)](https://toolrank.dev/ranking/{server})</code>
+              <button onclick={`navigator.clipboard.writeText('[![ToolRank](https://toolrank.dev/badge/dominant.svg)](https://toolrank.dev/ranking/${server})');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy badge',1500)`}
+                style="padding: 0.25rem 0.5rem; font-size: 0.65rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--fg-3); cursor: pointer;">Copy badge</button>
+            </div>
+          )}
+
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${current.display_name || server} scores ${Math.round(current.total_score)}/100 on ToolRank — top ${percentile}% of MCP servers 🏆`)}&url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener"
+              style="padding: 0.4rem 0.8rem; background: #000; color: #fff; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-decoration: none;">Post on 𝕏</a>
+            <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://toolrank.dev/ranking/${server}`)}`} target="_blank" rel="noopener"
+              style="padding: 0.4rem 0.8rem; background: #0077B5; color: #fff; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-decoration: none;">LinkedIn</a>
           </div>
         </div>
       </section>

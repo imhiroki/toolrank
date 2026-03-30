@@ -250,12 +250,93 @@ export default {
     if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/mcp")) {
       return new Response(JSON.stringify({
         name: "toolrank",
-        version: "0.1.1",
+        version: "0.2.0",
         description: "ToolRank MCP Server — Score and optimize MCP tool definitions for AI agent discovery.",
         mcp_endpoint: `${url.origin}/mcp`,
+        api_endpoint: `${url.origin}/api/score`,
         tools: TOOLS.map(t => t.name),
       }), {
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // === REST API: Score endpoint ===
+    if (request.method === "POST" && url.pathname === "/api/score") {
+      try {
+        const body = await request.json();
+        const tools = body.tools || (body.name ? [body] : []);
+        if (!tools.length) {
+          return new Response(JSON.stringify({ error: "Provide 'tools' array or a single tool object with 'name'" }), {
+            status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+        const scored = tools.map(t => scoreTool(t));
+        const avg = scored.reduce((s, t) => s + t.total, 0) / scored.length;
+        const level = avg >= 85 ? 'Dominant' : avg >= 70 ? 'Preferred' : avg >= 50 ? 'Selectable' : 'Low';
+        const pct = avg >= 95 ? 3 : avg >= 90 ? 10 : avg >= 85 ? 36 : avg >= 80 ? 55 : avg >= 70 ? 75 : 92;
+        return new Response(JSON.stringify({
+          score: Math.round(avg * 10) / 10,
+          level,
+          percentile: pct,
+          tools: scored.map(t => ({
+            name: t.name, score: t.total, level: t.levelName,
+            dimensions: t.dimensions, issues: t.issues,
+          })),
+          version: "1.0.0",
+          _links: { score_page: "https://toolrank.dev/score", framework: "https://toolrank.dev/framework" },
+        }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
+
+    // === REST API: OG Image (SVG scorecard) ===
+    if (request.method === "GET" && url.pathname.startsWith("/og/")) {
+      const serverName = decodeURIComponent(url.pathname.replace("/og/", "").replace(".svg", "").replace(".png", ""));
+      // Generate SVG scorecard (lightweight, no external dependencies)
+      const score = url.searchParams.get("score") || "?";
+      const level = url.searchParams.get("level") || "";
+      const levelColor = level === "Dominant" ? "#6d28d9" : level === "Preferred" ? "#22c55e" : level === "Selectable" ? "#eab308" : "#888";
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="315" viewBox="0 0 600 315">
+        <rect width="600" height="315" rx="16" fill="#0f0f14"/>
+        <text x="40" y="50" fill="#888" font-family="system-ui" font-size="14">toolrank.dev</text>
+        <text x="40" y="110" fill="#fff" font-family="system-ui" font-size="32" font-weight="700">${serverName}</text>
+        <text x="40" y="190" fill="${levelColor}" font-family="system-ui" font-size="80" font-weight="800">${score}</text>
+        <text x="${score.length > 2 ? 215 : 175}" y="190" fill="#666" font-family="system-ui" font-size="32">/100</text>
+        <rect x="40" y="220" width="120" height="30" rx="15" fill="${levelColor}20"/>
+        <text x="100" y="241" fill="${levelColor}" font-family="system-ui" font-size="14" font-weight="600" text-anchor="middle">${level}</text>
+        <text x="40" y="290" fill="#555" font-family="system-ui" font-size="12">ToolRank Score · Agent Tool Optimization</text>
+      </svg>`;
+      return new Response(svg, {
+        headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // === Embed widget ===
+    if (request.method === "GET" && url.pathname === "/embed.js") {
+      const js = `(function(){
+        var el=document.currentScript;
+        var s=el.getAttribute('data-server')||'';
+        var score=el.getAttribute('data-score')||'';
+        var level=el.getAttribute('data-level')||'';
+        if(!s)return;
+        var d=document.createElement('div');
+        d.innerHTML='<a href="https://toolrank.dev/ranking/'+s+'" target="_blank" rel="noopener" style="display:inline-block;border:1px solid #333;border-radius:8px;padding:12px 16px;background:#0f0f14;text-decoration:none;font-family:system-ui;min-width:200px">'
+          +'<div style="font-size:11px;color:#888;margin-bottom:4px">ToolRank Score</div>'
+          +'<div style="display:flex;align-items:baseline;gap:6px">'
+          +'<span style="font-size:28px;font-weight:700;color:#6d28d9">'+(score||'—')+'</span>'
+          +'<span style="font-size:12px;color:#666">/100</span>'
+          +'</div>'
+          +'<div style="font-size:11px;color:#888;margin-top:4px">'+s+'</div>'
+          +'</a>';
+        el.parentNode.insertBefore(d,el.nextSibling);
+      })();`;
+      return new Response(js, {
+        headers: { "Content-Type": "application/javascript", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
       });
     }
 
