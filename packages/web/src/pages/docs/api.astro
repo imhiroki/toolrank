@@ -105,6 +105,24 @@ import Layout from '../../layouts/Layout.astro';
 
   <section style="padding: 0 0 2rem;">
     <div class="w" style="max-width: 680px;">
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Ecosystem stats</h2>
+      <p style="font-size: 0.85rem; color: var(--fg-2); margin-bottom: 1rem;">Real-time ecosystem statistics. Use these numbers in your articles and reports — they update daily.</p>
+      <div style="background: var(--bg-s); border-radius: var(--r); padding: 0.5rem 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.7rem; font-weight: 700; color: #3b82f6; padding: 0.15rem 0.4rem; background: #3b82f615; border-radius: 4px;">GET</span>
+        <code style="font-size: 0.8rem; color: var(--fg);">https://mcp.toolrank.dev/api/stats</code>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 1rem;">Returns JSON with total scanned, scored, average score, distribution, and citation text.</p>
+
+      <p style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Stats badge</p>
+      <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.5rem;">Embeddable SVG badges for articles and docs:</p>
+      <pre style="background: var(--bg-s); border-radius: var(--r); padding: 1rem; overflow-x: auto; font-size: 0.75rem; line-height: 1.6; font-family: var(--mono); margin-bottom: 1rem;"><code>{`![MCP servers scored](https://mcp.toolrank.dev/api/stats/badge?stat=scored)
+![Average score](https://mcp.toolrank.dev/api/stats/badge?stat=avg)
+![Invisible to agents](https://mcp.toolrank.dev/api/stats/badge?stat=invisible)`}</code></pre>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 2rem;">
+    <div class="w" style="max-width: 680px;">
       <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Rate limits</h2>
       <div style="font-size: 0.85rem; color: var(--fg-2); line-height: 1.8;">
         <p><strong>Free:</strong> 100 requests/hour per IP</p>

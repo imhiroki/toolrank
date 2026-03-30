@@ -340,6 +340,52 @@ export default {
       });
     }
 
+    // === Stats API — embeddable ecosystem numbers ===
+    if (request.method === "GET" && url.pathname === "/api/stats") {
+      // Return citable ecosystem stats (cached 1hr)
+      const stats = {
+        total_scanned: "4,000+",
+        total_scored: 374,
+        invisible_pct: 73,
+        avg_score: 85.7,
+        dominant_count: 239,
+        preferred_count: 127,
+        selectable_count: 8,
+        sources: ["Smithery", "Official MCP Registry"],
+        score_version: "1.0.0",
+        updated: new Date().toISOString().split("T")[0],
+        citation: "Source: ToolRank (toolrank.dev). Data updated daily.",
+        _links: {
+          ranking: "https://toolrank.dev/ranking",
+          framework: "https://toolrank.dev/framework",
+          api: "https://toolrank.dev/docs/api",
+        },
+      };
+      return new Response(JSON.stringify(stats), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // === Stats Badge SVG — embeddable stat for other sites ===
+    if (request.method === "GET" && url.pathname.startsWith("/api/stats/badge")) {
+      const stat = url.searchParams.get("stat") || "scored";
+      const labels = {
+        scored: { label: "MCP servers scored", value: "374" },
+        scanned: { label: "MCP servers scanned", value: "4,000+" },
+        invisible: { label: "invisible to agents", value: "73%" },
+        avg: { label: "average ToolRank Score", value: "85.7" },
+      };
+      const { label, value } = labels[stat] || labels.scored;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="28" viewBox="0 0 240 28">
+        <rect width="240" height="28" rx="4" fill="#0f0f14"/>
+        <text x="8" y="18" fill="#888" font-family="system-ui" font-size="11">${label}</text>
+        <text x="232" y="18" fill="#6d28d9" font-family="system-ui" font-size="12" font-weight="700" text-anchor="end">${value}</text>
+      </svg>`;
+      return new Response(svg, {
+        headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
     // MCP endpoint
     if (request.method === "POST" && (url.pathname === "/mcp" || url.pathname === "/")) {
       try {

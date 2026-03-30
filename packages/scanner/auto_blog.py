@@ -1,265 +1,339 @@
 """
-ToolRank Auto Blog Generator
-Generates daily blog posts from scan data using Claude API.
-
-Runs as GitHub Actions cron job. Generates Markdown → commits to repo → triggers Astro build.
+ToolRank Auto Content Generator (Claude API)
+Generates daily data-driven blog posts using Claude API + scan data.
+Each article is unique, analytical, and designed to be cited/linked.
 
 Article types (rotated daily):
-  Monday:    "New MCP servers this week" (new entries in DB)
-  Tuesday:   "Category spotlight: [random category] ranked"
-  Wednesday: "Tool description teardown: Why [top server] scores 95+"
-  Thursday:  "5 most common ATO mistakes this month"
-  Friday:    "Score movers: servers that improved this week"
-  Saturday:  "Weekend read: ATO concept deep dive"
-  Sunday:    (no article - full scan day)
+  Monday:    "Ecosystem Pulse" — weekly stats, trends, new entries
+  Tuesday:   "Server Spotlight" — deep dive on a notable server
+  Wednesday: "Score Movers" — who improved, who declined, why
+  Thursday:  "Category Ranking" — top servers in a category
+  Friday:    "ATO Tips" — pattern-based improvement advice
+
+Monthly (1st of month):
+  "State of MCP" — comprehensive monthly report (highest link bait)
 
 Usage:
   python auto_blog.py                    # Generate today's article
-  python auto_blog.py --type teardown    # Force specific article type
-  python auto_blog.py --dry-run          # Preview without committing
+  python auto_blog.py --type spotlight   # Force specific type
+  python auto_blog.py --dry-run          # Preview without writing
+  python auto_blog.py --monthly          # Generate monthly State of MCP
 """
 
-import json
-import os
-import sys
-import argparse
-import logging
-from datetime import datetime, timezone
+import json, os, sys, argparse, logging, hashlib, random
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 try:
     import httpx
 except ImportError:
-    print("pip install httpx")
-    sys.exit(1)
+    print("pip install httpx"); sys.exit(1)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger("autoblog")
 
 CLAUDE_API = "https://api.anthropic.com/v1/messages"
 BLOG_DIR = Path(__file__).parent.parent / "web" / "src" / "content" / "blog"
-DATA_DIR = Path(__file__).parent.parent / "scanner" / "data"
+
+ARTICLE_TYPES = {
+    0: "pulse",      # Monday
+    1: "spotlight",   # Tuesday
+    2: "movers",      # Wednesday
+    3: "category",    # Thursday
+    4: "tips",        # Friday
+}
+
+CATEGORIES = [
+    "search", "database", "file-management", "code-analysis", "web-scraping",
+    "finance", "weather", "communication", "data-processing", "security",
+    "ai-ml", "documentation", "monitoring", "translation", "calendar",
+]
 
 
-def load_scan_data() -> dict:
-    """Load latest scan summary and scores (local files or Supabase)."""
-    summary_file = DATA_DIR / "latest_summary.json"
-    scores_file = DATA_DIR / "latest_scores.json"
+def load_scan_data():
+    """Load latest scores from Supabase."""
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
+    if not url or not key:
+        log.error("Set SUPABASE_URL and SUPABASE_SERVICE_KEY")
+        return None
 
-    summary = {}
-    scores = []
+    client = httpx.Client(timeout=30)
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
 
-    # Try local files first
-    if summary_file.exists():
-        with open(summary_file) as f:
-            summary = json.load(f)
-    if scores_file.exists():
-        with open(scores_file) as f:
-            scores = json.load(f)
+    # Latest scores
+    resp = client.get(
+        f"{url}/rest/v1/latest_scores?order=total_score.desc&limit=500",
+        headers=headers
+    )
+    scores = resp.json() if resp.status_code == 200 else []
 
-    # Fallback to Supabase if no local data
-    if not scores:
-        try:
-            from supabase import create_client
-            url = os.environ.get("SUPABASE_URL")
-            key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
-            if url and key:
-                db = create_client(url, key)
-                # Read from latest_scores view (scores joined with servers)
-                resp = db.table("latest_scores").select("*").order("total_score", desc=True).limit(200).execute()
-                if resp.data:
-                    scores = [{
-                        "server_name": s["server_name"],
-                        "display_name": s.get("display_name", ""),
-                        "average_score": s.get("total_score", 0),
-                        "tools": [],  # Not needed for article generation
-                        "use_count": 0,
-                    } for s in resp.data]
-                    log.info(f"Loaded {len(scores)} scores from Supabase")
-                # Get summary
-                sum_resp = db.table("scan_summaries").select("*").order("scan_date", desc=True).limit(1).execute()
-                if sum_resp.data:
-                    summary = sum_resp.data[0].get("raw_summary", {})
-        except Exception as e:
-            log.warning(f"Supabase fallback failed: {e}")
+    # Scan history
+    resp2 = client.get(
+        f"{url}/rest/v1/scan_summaries?order=scan_date.desc&limit=30",
+        headers=headers
+    )
+    history = resp2.json() if resp2.status_code == 200 else []
 
-    return {"summary": summary, "scores": scores}
+    client.close()
+    return {"scores": scores, "history": history}
 
 
-def get_article_type(forced: str = None) -> str:
-    """Determine article type based on day of week."""
-    if forced:
-        return forced
-    
-    weekday = datetime.now().weekday()
-    types = {
-        0: "new_servers",
-        1: "category_spotlight",
-        2: "teardown",
-        3: "common_mistakes",
-        4: "score_movers",
-        5: "concept_deep_dive",
-        6: None,  # Sunday = scan day, no article
-    }
-    return types.get(weekday)
+def build_context(data, article_type):
+    """Build context string for Claude based on article type."""
+    scores = data["scores"]
+    history = data["history"]
+
+    total = len(scores)
+    avg = sum(s.get("total_score", 0) for s in scores) / total if total else 0
+    dominant = sum(1 for s in scores if s.get("total_score", 0) >= 85)
+    preferred = sum(1 for s in scores if 70 <= s.get("total_score", 0) < 85)
+    selectable = sum(1 for s in scores if 50 <= s.get("total_score", 0) < 70)
+
+    base = f"""ToolRank Ecosystem Data (as of {datetime.now().strftime('%Y-%m-%d')}):
+- Total scored servers: {total}
+- Average score: {avg:.1f}/100
+- Distribution: {dominant} Dominant (85+), {preferred} Preferred (70-84), {selectable} Selectable (50-69)
+- Sources: Smithery + Official MCP Registry (4,000+ scanned, ~73% have no tool definitions)
+
+Top 10 servers:
+"""
+    for s in scores[:10]:
+        base += f"  {s.get('display_name', s['server_name'])} ({s['server_name']}): {round(s['total_score'])}/100 F:{round(s.get('findability',0))} C:{round(s.get('clarity',0))} P:{round(s.get('precision',0))} E:{round(s.get('efficiency',0))}\n"
+
+    if article_type == "spotlight":
+        # Pick a random top-20 server for deep dive
+        target = random.choice(scores[:20])
+        base += f"\nSpotlight server: {target.get('display_name', target['server_name'])} ({target['server_name']})\n"
+        base += f"  Score: {round(target['total_score'])}/100\n"
+        base += f"  Tools: {target.get('tool_count', '?')}\n"
+        base += f"  Source: {target.get('source', 'smithery')}\n"
+        base += f"  Findability: {round(target.get('findability',0))}/25, Clarity: {round(target.get('clarity',0))}/35, Precision: {round(target.get('precision',0))}/25, Efficiency: {round(target.get('efficiency',0))}/15\n"
+
+    elif article_type == "category":
+        cat = random.choice(CATEGORIES)
+        base += f"\nCategory focus: {cat}\n"
+        # Find servers matching category keyword
+        matches = [s for s in scores if cat.replace("-", " ") in (s.get("display_name", "") + s.get("server_name", "") + s.get("description", "")).lower()][:10]
+        if matches:
+            base += "Matching servers:\n"
+            for s in matches:
+                base += f"  {s.get('display_name', s['server_name'])}: {round(s['total_score'])}/100\n"
+
+    elif article_type == "movers":
+        if len(history) >= 2:
+            latest = history[0]
+            prev = history[1]
+            base += f"\nTrend: avg score {prev.get('avg_score','?')} → {latest.get('avg_score','?')}\n"
+            base += f"Servers: {prev.get('scored_servers','?')} → {latest.get('scored_servers','?')}\n"
+
+    elif article_type == "tips":
+        # Collect most common issues from low-scoring servers
+        low = [s for s in scores if s.get("total_score", 0) < 80]
+        low_clarity = sum(1 for s in low if s.get("clarity", 0) < 25)
+        low_precision = sum(1 for s in low if s.get("precision", 0) < 18)
+        low_findability = sum(1 for s in low if s.get("findability", 0) < 20)
+        base += f"\nCommon issues in sub-80 servers ({len(low)} total):\n"
+        base += f"  Low clarity (<25/35): {low_clarity} servers\n"
+        base += f"  Low precision (<18/25): {low_precision} servers\n"
+        base += f"  Low findability (<20/25): {low_findability} servers\n"
+
+    elif article_type == "monthly":
+        base += f"\nScan history (last 30 days): {len(history)} data points\n"
+        if history:
+            base += f"First scan: {history[-1].get('scan_date','?')}, Latest: {history[0].get('scan_date','?')}\n"
+
+    bottom_5 = scores[-5:] if len(scores) >= 5 else scores
+    base += "\nBottom 5 servers:\n"
+    for s in bottom_5:
+        base += f"  {s.get('display_name', s['server_name'])}: {round(s['total_score'])}/100\n"
+
+    return base
 
 
-def build_prompt(article_type: str, data: dict) -> str:
-    """Build Claude API prompt for article generation."""
-    summary = data.get("summary", {})
-    scores = data.get("scores", [])
-    
-    top_5 = sorted(scores, key=lambda x: x.get("average_score", 0), reverse=True)[:5]
-    bottom_5 = sorted(scores, key=lambda x: x.get("average_score", 0))[:5]
-    avg = summary.get("average_score", 0)
-    total = summary.get("total_in_db", len(scores))
-    
-    base_context = f"""You are writing a blog post for ToolRank (toolrank.dev), the first ATO (Agent Tool Optimization) platform.
-    
-Context:
-- ToolRank scores MCP tool definitions across 4 dimensions: Findability, Clarity, Precision, Efficiency
-- Current ecosystem: {total} servers scored, average score {avg}/100
-- Top servers: {json.dumps([{"name": s["server_name"], "score": s["average_score"]} for s in top_5])}
-- Bottom servers: {json.dumps([{"name": s["server_name"], "score": s["average_score"]} for s in bottom_5])}
+SYSTEM_PROMPT = """You are a technical writer for ToolRank (toolrank.dev), an open-source platform that scores MCP tool definitions for AI agent discoverability.
 
-Writing style:
-- Technical but accessible
-- Data-driven with specific numbers
-- Short paragraphs (2-3 sentences max)
-- Bold section headers
-- Include actionable takeaways
-- Link to /score for self-diagnosis, /framework for methodology, /ranking for full data
-- Never use emojis
-- End with a clear call to action
+Write blog articles that are:
+- Data-driven: use specific numbers from the provided scan data
+- Analytical: don't just list facts, explain WHY patterns exist and WHAT developers should do
+- Citable: include specific claims that other writers would want to reference
+- Actionable: every article should have concrete takeaways
+- SEO-optimized: use natural keyword placement for "MCP tools", "AI agent", "tool optimization"
 
-Output format: Markdown with YAML frontmatter (title, description, date, author). Do NOT include ```markdown fences."""
+Format: Astro-compatible Markdown with frontmatter.
+Required frontmatter fields: title, description, pubDate (YYYY-MM-DD), tags (array)
 
-    prompts = {
-        "new_servers": f"""{base_context}
+IMPORTANT:
+- Do NOT use placeholder or generic advice. Use the REAL data provided.
+- Every claim should be backed by a number from the data.
+- Link to toolrank.dev/score, toolrank.dev/ranking, toolrank.dev/framework where relevant.
+- Keep articles 600-1000 words. Quality over length.
+- Titles should be specific and compelling, not generic.
+"""
 
-Write a short article (400-600 words) about new MCP servers that appeared in the ecosystem recently. Pick 3-5 interesting ones from the data and analyze their ToolRank Scores. What do they do well? What could they improve?
-
-Title format: "New in the MCP ecosystem: [month] [year]"
+PROMPTS = {
+    "pulse": """Write a weekly ecosystem pulse article. Cover:
+1. Key stats this week (total servers, average score, distribution)
+2. One interesting trend or anomaly in the data
+3. What this means for MCP developers
+Title should include specific numbers, e.g. "374 MCP Servers Scored: What the Data Tells Us This Week"
 """,
-        "category_spotlight": f"""{base_context}
-
-Write a short article (400-600 words) spotlighting a specific category of MCP servers (e.g., database tools, search tools, DevOps tools). Rank them by ToolRank Score. Analyze what the top ones do differently.
-
-Title format: "[Category] MCP servers ranked by agent-readiness"
+    "spotlight": """Write a server spotlight article analyzing one specific server in depth. Cover:
+1. What makes this server score well (or poorly) — be specific about dimensions
+2. What other developers can learn from this example
+3. One specific fix that would improve the score (if applicable)
+Title should name the server, e.g. "How Brave Search Hits 95/100 on ToolRank"
 """,
-        "teardown": f"""{base_context}
-
-Write a short article (400-600 words) analyzing why the #1 scored server ({top_5[0]["name"] if top_5 else "unknown"}, score {top_5[0]["average_score"] if top_5 else 0}) scores so high. Break down each dimension. Show what other servers can learn from it.
-
-Title format: "Why [server name] scores {top_5[0]["average_score"] if top_5 else 0}/100 on ToolRank"
+    "movers": """Write a score movers article about changes in the ecosystem. Cover:
+1. Which servers improved or declined (use data if available, otherwise discuss patterns)
+2. What typically causes score changes
+3. The most impactful single change a developer can make
+Title should create curiosity, e.g. "The One-Line Fix That Jumped This Server from 62 to 91"
 """,
-        "common_mistakes": f"""{base_context}
-
-Write a short article (400-600 words) about the most common ATO mistakes found across the ecosystem. Use data from the scan. Give specific before/after examples of descriptions.
-
-Title format: "The 5 most common MCP tool description mistakes (and how to fix them)"
+    "category": """Write a category ranking article comparing servers in a specific category. Cover:
+1. Top servers in this category and why they score well
+2. Common patterns among high-scoring servers in this category
+3. Gaps and opportunities (what's missing in this category)
+Title should name the category, e.g. "The 5 Best Search MCP Servers (and What They Do Right)"
 """,
-        "score_movers": f"""{base_context}
-
-Write a short article (400-600 words) about servers that have notably high or low scores and what differentiates them. Compare top performers vs bottom performers dimension by dimension.
-
-Title format: "What separates a 95-point MCP server from a 55-point one"
+    "tips": """Write an ATO tips article based on common patterns in the data. Cover:
+1. The most common scoring issue and exactly how to fix it
+2. A before/after example (construct a realistic one from patterns)
+3. Why this issue matters for AI agent selection
+Title should be specific and practical, e.g. "Why 67% of MCP Tools Lose Points on Clarity (and the 30-Second Fix)"
 """,
-        "concept_deep_dive": f"""{base_context}
-
-Write a short article (400-600 words) exploring one ATO concept in depth. Choose from: why Clarity is weighted 35%, how token efficiency affects agent selection, why tool count matters (GitHub's 40→13 reduction), or how registry presence affects findability.
-
-Title format: "[Concept]: The most overlooked factor in agent tool selection"
+    "monthly": """Write a comprehensive "State of MCP" monthly report. This is the most important article — designed to be THE reference that others cite. Cover:
+1. Ecosystem size and growth
+2. Score distribution and what it means
+3. Top servers and emerging trends
+4. Categories with the most/least competition
+5. Predictions for next month
+6. Key recommendations for developers
+Title: "State of MCP — {month} {year}: {compelling subtitle}"
+Make it 1000-1500 words. This is the flagship content piece.
 """,
-    }
-    
-    return prompts.get(article_type, prompts["common_mistakes"])
+}
 
 
-def generate_article(article_type: str, data: dict) -> str | None:
-    """Call Claude API to generate article."""
+def generate_article(article_type, data, dry_run=False):
+    """Generate article using Claude API."""
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         log.error("Set ANTHROPIC_API_KEY env var")
         return None
-    
-    prompt = build_prompt(article_type, data)
-    
-    try:
-        client = httpx.Client(timeout=60)
-        resp = client.post(
-            CLAUDE_API,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 2000,
-                "messages": [{"role": "user", "content": prompt}],
-            },
-        )
-        resp.raise_for_status()
-        result = resp.json()
-        return result["content"][0]["text"]
-    except Exception as e:
-        log.error(f"Claude API error: {e}")
+
+    context = build_context(data, article_type)
+    prompt = PROMPTS.get(article_type, PROMPTS["pulse"])
+
+    # Add date context
+    today = datetime.now()
+    prompt += f"\n\nToday's date: {today.strftime('%Y-%m-%d')}. Use this as pubDate."
+
+    log.info(f"Generating '{article_type}' article via Claude API...")
+
+    client = httpx.Client(timeout=120)
+    resp = client.post(
+        CLAUDE_API,
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        },
+        json={
+            "model": "claude-sonnet-4-20250514",
+            "max_tokens": 2000,
+            "system": SYSTEM_PROMPT,
+            "messages": [
+                {"role": "user", "content": f"Here is the latest ToolRank ecosystem data:\n\n{context}\n\n{prompt}"}
+            ],
+        },
+    )
+    client.close()
+
+    if resp.status_code != 200:
+        log.error(f"Claude API error: {resp.status_code} {resp.text[:200]}")
         return None
 
+    result = resp.json()
+    content = result["content"][0]["text"]
 
-def save_article(content: str) -> Path:
-    """Save generated article to blog content directory."""
+    # Extract slug from frontmatter title
+    lines = content.split("\n")
+    title_line = next((l for l in lines if l.startswith("title:")), "")
+    title = title_line.replace("title:", "").strip().strip('"').strip("'")
+    slug = title.lower()
+    for ch in [" ", ":", "'", '"', "(", ")", ",", ".", "?", "!", "/", "&", "%"]:
+        slug = slug.replace(ch, "-")
+    slug = "-".join(p for p in slug.split("-") if p)[:60]
+
+    # Add date prefix for uniqueness
+    date_prefix = today.strftime("%Y-%m-%d")
+    slug = f"{date_prefix}-{slug}"
+
+    return {"slug": slug, "content": content, "title": title, "type": article_type}
+
+
+def write_article(article, dry_run=False):
+    """Write article to blog directory."""
+    if dry_run:
+        log.info(f"[DRY RUN] Would write: {article['slug']}.md")
+        log.info(f"  Title: {article['title']}")
+        log.info(f"  Type: {article['type']}")
+        log.info(f"  Length: {len(article['content'])} chars")
+        print("\n--- Preview ---")
+        print(article["content"][:500])
+        print("...")
+        return True
+
     BLOG_DIR.mkdir(parents=True, exist_ok=True)
-    
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    slug = f"auto-{date_str}"
-    filepath = BLOG_DIR / f"{slug}.md"
-    
+    filepath = BLOG_DIR / f"{article['slug']}.md"
+
+    # Don't overwrite
+    if filepath.exists():
+        log.info(f"Article already exists: {filepath.name}")
+        return False
+
     with open(filepath, "w") as f:
-        f.write(content)
-    
-    log.info(f"Article saved: {filepath}")
-    return filepath
+        f.write(article["content"])
+
+    log.info(f"✅ Wrote: {filepath.name} ({len(article['content'])} chars)")
+    return True
 
 
 def main():
-    parser = argparse.ArgumentParser(description="ToolRank Auto Blog Generator")
-    parser.add_argument("--type", choices=[
-        "new_servers", "category_spotlight", "teardown",
-        "common_mistakes", "score_movers", "concept_deep_dive"
-    ], help="Force article type")
-    parser.add_argument("--dry-run", action="store_true")
+    parser = argparse.ArgumentParser(description="ToolRank Auto Content Generator")
+    parser.add_argument("--type", choices=list(PROMPTS.keys()), help="Force article type")
+    parser.add_argument("--dry-run", action="store_true", help="Preview without writing")
+    parser.add_argument("--monthly", action="store_true", help="Generate monthly State of MCP")
     args = parser.parse_args()
-    
-    article_type = get_article_type(args.type)
-    if not article_type:
-        log.info("Sunday = scan day. No article generated.")
-        return
-    
+
+    # Determine article type
+    if args.monthly:
+        article_type = "monthly"
+    elif args.type:
+        article_type = args.type
+    else:
+        dow = datetime.now().weekday()
+        article_type = ARTICLE_TYPES.get(dow, "pulse")
+
     log.info(f"Article type: {article_type}")
-    
+
+    # Load data
     data = load_scan_data()
-    if not data["scores"]:
-        log.error("No scan data found. Run scanner first.")
-        return
-    
-    log.info(f"Loaded {len(data['scores'])} scores")
-    
-    content = generate_article(article_type, data)
-    if not content:
-        log.error("Failed to generate article")
-        return
-    
-    if args.dry_run:
-        print("\n" + "=" * 60)
-        print("DRY RUN — Article preview:")
-        print("=" * 60)
-        print(content)
-        return
-    
-    filepath = save_article(content)
-    print(f"Article generated: {filepath}")
+    if not data or not data["scores"]:
+        log.error("No scan data available")
+        sys.exit(1)
+
+    log.info(f"Loaded {len(data['scores'])} scores, {len(data['history'])} history points")
+
+    # Generate
+    article = generate_article(article_type, data, args.dry_run)
+    if not article:
+        log.error("Article generation failed")
+        sys.exit(1)
+
+    # Write
+    write_article(article, args.dry_run)
 
 
 if __name__ == "__main__":
