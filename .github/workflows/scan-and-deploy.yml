@@ -47,6 +47,20 @@ jobs:
           path: packages/scanner/data/
           retention-days: 90
 
+      - name: Auto-issue low-score servers (Mondays only)
+        if: github.event.schedule && contains('1', '') || github.event_name == 'workflow_dispatch'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.AUTO_ISSUE_TOKEN }}
+        run: |
+          DAY=$(date +%u)
+          if [ "$DAY" = "1" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python packages/scanner/auto_issue.py --limit 5 --min-score 70
+          else
+            echo "Skipping auto-issue (not Monday)"
+          fi
+
   build-deploy:
     needs: scan
     runs-on: ubuntu-latest
