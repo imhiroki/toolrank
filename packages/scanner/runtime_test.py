@@ -281,7 +281,7 @@ def main():
     args = parser.parse_args()
 
     db = None
-    if SUPABASE_URL and SUPABASE_KEY and args.apply:
+    if SUPABASE_URL and SUPABASE_KEY:
         db = SupabaseClient(SUPABASE_URL, SUPABASE_KEY)
 
     print(f"\n{'='*60}")
