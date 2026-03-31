@@ -177,7 +177,7 @@ class SupabaseClient:
                 s["id"] = sid
                 s["name"] = s.get("display_name") or s.get("server_name", "")
                 s["score"] = s.get("total_score", 0)
-        return [s for s in servers if s.get("tools")]
+        return [s for s in servers if s.get("name")]
 
     def get_servers_by_ids(self, ids: list[str]):
         """Fetch specific servers by UUID."""
