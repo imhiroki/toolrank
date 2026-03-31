@@ -304,11 +304,20 @@ class CanonicalIndexBuilder:
         }
 
     def fetch_all_servers(self) -> list[dict]:
-        """Fetch all servers from Supabase."""
-        url = f"{self.db_url}/rest/v1/servers?select=*&order=score.desc&limit=2000"
+        """Fetch all servers with scores from Supabase."""
+        url = f"{self.db_url}/rest/v1/latest_scores?select=*&order=total_score.desc&limit=2000"
         r = self.client.get(url, headers=self.db_headers)
         r.raise_for_status()
-        return r.json()
+        data = r.json()
+        # Map view fields to expected fields
+        for s in data:
+            s["id"] = s.get("server_id", s.get("id"))
+            s["name"] = s.get("display_name") or s.get("server_name", "")
+            s["description"] = s.get("description", "")
+            s["repo_url"] = s.get("repository_url", "")
+            s["score"] = s.get("total_score", 0)
+            s["tools"] = []  # tools not in view, loaded separately if needed
+        return data
 
     def update_server(self, server_id: str, updates: dict):
         """Update server record in Supabase."""
