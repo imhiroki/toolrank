@@ -1,0 +1,55 @@
+name: Runtime Reliability Test (Layer 3)
+on:
+  schedule:
+    - cron: '0 4 * * 3'    # 毎週水曜 4:00 UTC
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Test a specific server URL'
+        type: string
+        default: ''
+      dry-run:
+        description: 'Dry run (no DB writes)'
+        type: boolean
+        default: false
+
+jobs:
+  runtime-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Run Runtime Tests
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          cd packages/scanner
+
+          URL="${{ inputs.url }}"
+          DRY_RUN="${{ inputs.dry-run }}"
+
+          if [ -n "$URL" ]; then
+            # Test specific URL
+            if [ "$DRY_RUN" = "true" ]; then
+              python3 runtime_test.py --url "$URL" --dry-run
+            else
+              python3 runtime_test.py --url "$URL" --apply
+            fi
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "Scheduled run — testing all deployed servers"
+            python3 runtime_test.py --all --apply
+          elif [ "$DRY_RUN" = "true" ]; then
+            echo "Manual dry-run"
+            python3 runtime_test.py --all --dry-run
+          else
+            echo "Manual run — applying"
+            python3 runtime_test.py --all --apply
+          fi
