@@ -1,6 +1,6 @@
 ---
-import Layout from '../../../layouts/Layout.astro';
-import { getCategories } from '../../../lib/supabase';
+import Layout from '../layouts/Layout.astro';
+import { getCategories } from '../lib/supabase';
 
 const categories = await getCategories();
 const hasData = categories.length > 0;
