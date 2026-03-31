@@ -319,40 +319,43 @@ import Layout from '../layouts/Layout.astro';
           </p>
         </div>
 
-        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+        <div style="border: 2px solid var(--accent); border-radius: var(--r); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 2: Selection Performance</p>
-            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">Q2 2026</span>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--accent); color: white; border-radius: 100px;">Live — v2.0.0</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
-            LLM-based selection testing using Claude API. Local heuristic simulation (r = 0.828) is a prototype; 
-            this layer will use real LLM selection decisions.
+            LLM-based selection testing using Claude Sonnet API. 100-round tournaments measure real agent preference.
+            Results stored in trust_tiers with Selection Verified badge at ≥70% win rate.
           </p>
-          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification (draft):</p>
+          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification:</p>
           <ul style="font-size: 0.7rem; color: var(--fg-4); line-height: 1.7; padding-left: 1rem; margin: 0;">
-            <li>Model: Claude 3.5 Sonnet (fixed version for reproducibility)</li>
-            <li>Method: 100-round tournament per tool. Each round presents 3-5 competing tools for a task.</li>
-            <li>Metric: Selection rate (% of rounds tool is chosen), rank position, confidence interval</li>
-            <li>Conditions: Prompt, model version, temperature, competitor set — all published and frozen per evaluation cycle</li>
-            <li>Reproducibility: Full evaluation scripts and prompts open-sourced</li>
+            <li>Model: Claude Sonnet 4 (fixed version for reproducibility)</li>
+            <li>Method: 100-round tournament per tool. Each round presents 4 competing tools for a realistic task.</li>
+            <li>Metric: Selection rate (% of rounds tool is chosen). ≥70% = Selection Verified.</li>
+            <li>Frequency: Monthly automated via GitHub Actions</li>
+            <li>Reproducibility: Full evaluation scripts and prompts <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scanner/selection_tournament.py">open-sourced</a></li>
           </ul>
         </div>
 
-        <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1rem;">
+        <div style="border: 2px solid var(--accent); border-radius: var(--r); padding: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <p style="font-weight: 600; font-size: 0.9rem;">Layer 3: Execution Reliability</p>
-            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--bg-m); color: var(--fg-3); border-radius: 100px;">H2 2026</span>
+            <span style="font-size: 0.65rem; padding: 0.2rem 0.5rem; background: var(--accent); color: white; border-radius: 100px;">Live — v2.0.0</span>
           </div>
           <p style="font-size: 0.8rem; color: var(--fg-3); margin-bottom: 0.75rem;">
-            Runtime success rate, response quality, and error handling. Requires runtime monitoring infrastructure.
+            Runtime testing of deployed MCP servers. Health checks, latency, MCP handshake, tool listing, and error quality.
+            ≥90% success rate = Runtime Verified badge.
           </p>
-          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification (draft):</p>
+          <p style="font-size: 0.7rem; font-weight: 600; color: var(--fg-4); margin-bottom: 0.3rem;">Measurement specification:</p>
           <ul style="font-size: 0.7rem; color: var(--fg-4); line-height: 1.7; padding-left: 1rem; margin: 0;">
-            <li>Success rate: % of invocations returning valid, non-error responses</li>
-            <li>Timeout rate: % of invocations exceeding 30s response time</li>
-            <li>Schema conformance: % of responses matching declared output schema</li>
-            <li>Error quality: Whether error messages are actionable (not just "500 Internal Error")</li>
-            <li>Uptime: Availability measured via periodic health checks (if server is remotely hosted)</li>
+            <li>Health check: HTTP connectivity and response code</li>
+            <li>Latency: Response time in milliseconds</li>
+            <li>MCP handshake: JSON-RPC initialize protocol compliance</li>
+            <li>Tool listing: Ability to enumerate available tools</li>
+            <li>Error quality: Actionable error messages on invalid input</li>
+            <li>Threshold: ≥90% tests passed = Runtime Verified</li>
+            <li>Script: <a href="https://github.com/imhiroki/toolrank/blob/main/packages/scanner/runtime_test.py">open-sourced</a></li>
           </ul>
         </div>
       </div>

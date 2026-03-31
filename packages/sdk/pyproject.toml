@@ -1,0 +1,32 @@
+[project]
+name = "toolrank"
+version = "0.1.0"
+description = "Trust-aware MCP tool selection for AI agent frameworks"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [{ name = "ToolRank", email = "hello@toolrank.dev" }]
+keywords = ["mcp", "ai", "agent", "toolrank", "ato", "trust"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+httpx = ["httpx>=0.25"]
+langchain = ["langchain>=0.1"]
+crewai = ["crewai>=0.1"]
+
+[project.urls]
+Homepage = "https://toolrank.dev"
+Documentation = "https://toolrank.dev/docs/api"
+Repository = "https://github.com/imhiroki/toolrank"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"

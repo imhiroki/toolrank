@@ -294,6 +294,176 @@ export default {
       }
     }
 
+    // === REST API: AI Rewrite Proposals (Pro) ===
+    if (request.method === "POST" && url.pathname === "/api/rewrite") {
+      try {
+        const body = await request.json();
+        const tool = body.tool || body;
+        if (!tool.name) {
+          return new Response(JSON.stringify({ error: "Provide a tool object with 'name'" }), {
+            status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        if (!env.ANTHROPIC_API_KEY) {
+          return new Response(JSON.stringify({ error: "AI rewrite not configured" }), {
+            status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        // Score first
+        const scored = scoreTool(tool);
+
+        // Call Claude to generate optimized tool definition
+        const prompt = `You are an expert at optimizing MCP (Model Context Protocol) tool definitions for AI agent discovery and selection.
+
+Given this MCP tool definition:
+${JSON.stringify(tool, null, 2)}
+
+Current ToolRank Score: ${scored.total}/100
+Issues found:
+${scored.issues.map(i => `- [${i.sev}] ${i.msg}: ${i.fix}`).join('\n')}
+
+Generate an optimized version that:
+1. Has a clear, action-oriented description starting with a verb
+2. Includes "Use this when..." usage context
+3. Documents return values with "Returns..."
+4. Has complete inputSchema with types, descriptions, required fields, enums where appropriate
+5. Uses a specific, searchable tool name in snake_case
+
+Respond with ONLY a JSON object containing the optimized tool definition. No explanation, no markdown.`;
+
+        const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2000,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        const aiData = await aiRes.json();
+        let rewriteText = "";
+        for (const block of (aiData.content || [])) {
+          if (block.type === "text") rewriteText += block.text;
+        }
+
+        // Parse JSON from response
+        let rewritten;
+        try {
+          const cleaned = rewriteText.replace(/```json\n?/g, '').replace(/```/g, '').trim();
+          rewritten = JSON.parse(cleaned);
+        } catch {
+          rewritten = { raw: rewriteText };
+        }
+
+        // Score the rewritten version
+        const rewrittenScore = rewritten.name ? scoreTool(rewritten) : null;
+
+        return new Response(JSON.stringify({
+          original: { name: tool.name, score: scored.total, issues: scored.issues },
+          rewritten: rewritten,
+          rewritten_score: rewrittenScore ? rewrittenScore.total : null,
+          improvement: rewrittenScore ? Math.round(rewrittenScore.total - scored.total) : null,
+          version: "1.0.0",
+        }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
+
+    // === REST API: AI Rewrite Proposals (Pro) ===
+    if (request.method === "POST" && url.pathname === "/api/rewrite") {
+      if (!env.ANTHROPIC_API_KEY) {
+        return new Response(JSON.stringify({ error: "AI rewrite not configured" }), {
+          status: 503, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      try {
+        const body = await request.json();
+        const tool = body.tool || body;
+        if (!tool.name) {
+          return new Response(JSON.stringify({ error: "Provide a tool object with 'name'" }), {
+            status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+          });
+        }
+
+        // Score the tool first
+        const scored = scoreTool(tool);
+
+        const prompt = `You are an expert at optimizing MCP tool definitions for AI agent discovery and selection.
+
+Given this tool definition:
+${JSON.stringify(tool, null, 2)}
+
+Current ToolRank Score: ${scored.total}/100
+Issues found:
+${scored.issues.map(i => `- [${i.sev}] ${i.msg} → Fix: ${i.fix}`).join('\n')}
+
+Rewrite the tool definition to maximize its ToolRank Score. Follow these rules:
+1. Name: Use specific, action-oriented snake_case (e.g., search_repositories, not get)
+2. Description: Start with action verb. Include purpose, usage context ("Use this when..."), and return value. 80-200 chars optimal.
+3. inputSchema: Add type:"object", properties with types+descriptions, required array, enums where applicable, defaults for optional params.
+
+Return ONLY valid JSON — the complete rewritten tool definition. No markdown, no explanation.`;
+
+        const apiRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 2000,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        const apiData = await apiRes.json();
+        let rewrittenText = "";
+        for (const block of (apiData.content || [])) {
+          if (block.type === "text") rewrittenText += block.text;
+        }
+
+        // Try to parse as JSON
+        let rewritten;
+        try {
+          const clean = rewrittenText.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+          rewritten = JSON.parse(clean);
+        } catch {
+          rewritten = { raw: rewrittenText };
+        }
+
+        // Score the rewritten version
+        const rewrittenScored = rewritten.name ? scoreTool(rewritten) : null;
+
+        return new Response(JSON.stringify({
+          original: { name: tool.name, score: scored.total, issues: scored.issues },
+          rewritten: rewritten,
+          rewritten_score: rewrittenScored ? rewrittenScored.total : null,
+          improvement: rewrittenScored ? rewrittenScored.total - scored.total : null,
+          _meta: { model: "claude-sonnet-4-20250514", version: "1.0.0" },
+        }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
+
     // === REST API: OG Image (SVG scorecard) ===
     if (request.method === "GET" && url.pathname.startsWith("/og/")) {
       const serverName = decodeURIComponent(url.pathname.replace("/og/", "").replace(".svg", "").replace(".png", ""));

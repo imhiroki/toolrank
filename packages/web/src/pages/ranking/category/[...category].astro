@@ -1,0 +1,123 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { supabase, getCategories, getServersByCategory } from '../../../lib/supabase';
+
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  return categories.map(c => ({ params: { category: c.category } }));
+}
+
+const { category } = Astro.params;
+const servers = category ? await getServersByCategory(category) : [];
+const hasData = servers.length > 0;
+
+const avgScore = hasData ? Math.round(servers.reduce((s, r) => s + r.total_score, 0) / servers.length * 10) / 10 : 0;
+const dominant = servers.filter(s => s.total_score >= 85).length;
+const preferred = servers.filter(s => s.total_score >= 70 && s.total_score < 85).length;
+
+const title = `${category} MCP Servers — ToolRank Category Ranking`;
+const desc = `${servers.length} ${category} MCP servers ranked by ToolRank Score. Average: ${avgScore}/100. ${dominant} dominant, ${preferred} preferred.`;
+---
+
+<Layout
+  title={title}
+  breadcrumbs={[
+    { label: "Ranking", href: "/ranking" },
+    { label: "Categories", href: "/ranking/category" },
+    { label: category || '', href: '' },
+  ]}
+  description={desc}
+>
+  <section style="padding: 3rem 0 1rem;">
+    <div class="w" style="max-width: 900px;">
+      <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: capitalize;">{category}</h1>
+      <p style="color: var(--fg-2); font-size: 0.9rem; line-height: 1.6;">
+        {hasData
+          ? `${servers.length} servers scored. Average: ${avgScore}/100.`
+          : `No servers found in "${category}" category.`}
+      </p>
+    </div>
+  </section>
+
+  {hasData && (
+    <section style="padding: 0 0 1rem;">
+      <div class="w" style="max-width: 900px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+          <div style="padding: 0.75rem; background: var(--bg-s); border-radius: var(--r); text-align: center;">
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--fg);">{servers.length}</p>
+            <p style="font-size: 0.6rem; color: var(--fg-4);">Servers</p>
+          </div>
+          <div style="padding: 0.75rem; background: var(--bg-s); border-radius: var(--r); text-align: center;">
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--fg);">{avgScore}</p>
+            <p style="font-size: 0.6rem; color: var(--fg-4);">Avg Score</p>
+          </div>
+          <div style="padding: 0.75rem; background: var(--bg-s); border-radius: var(--r); text-align: center;">
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--accent);">{dominant}</p>
+            <p style="font-size: 0.6rem; color: var(--fg-4);">Dominant</p>
+          </div>
+          <div style="padding: 0.75rem; background: var(--bg-s); border-radius: var(--r); text-align: center;">
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--ok);">{preferred}</p>
+            <p style="font-size: 0.6rem; color: var(--fg-4);">Preferred</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section style="padding: 0 0 4rem;">
+    <div class="w" style="max-width: 900px;">
+      {hasData ? (
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border);">
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4); width: 3rem;">#</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: left; color: var(--fg-4);">Server</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);">Score</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);" class="hide-mobile">F</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);" class="hide-mobile">C</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);" class="hide-mobile">P</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);" class="hide-mobile">E</th>
+                <th style="padding: 0.6rem 0.5rem; text-align: center; color: var(--fg-4);">Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              {servers.map((s, i) => {
+                const lvlC = { 'Dominant': 'var(--accent)', 'Preferred': 'var(--ok)', 'Selectable': 'var(--warn)', 'Visible': 'var(--fg-4)', 'Absent': 'var(--err)' };
+                return (
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 0.5rem; text-align: center; color: var(--fg-4);">{i + 1}</td>
+                    <td style="padding: 0.5rem; text-align: left;">
+                      <a href={`/ranking/${s.server_name}`} style="font-weight: 500; color: var(--fg); text-decoration: none;">
+                        {s.display_name || s.server_name}
+                      </a>
+                    </td>
+                    <td style="padding: 0.5rem; text-align: center; font-weight: 600;">{Math.round(s.total_score)}</td>
+                    <td style="padding: 0.5rem; text-align: center; color: var(--fg-3);" class="hide-mobile">{Math.round(s.findability)}</td>
+                    <td style="padding: 0.5rem; text-align: center; color: var(--fg-3);" class="hide-mobile">{Math.round(s.clarity)}</td>
+                    <td style="padding: 0.5rem; text-align: center; color: var(--fg-3);" class="hide-mobile">{Math.round(s.precision)}</td>
+                    <td style="padding: 0.5rem; text-align: center; color: var(--fg-3);" class="hide-mobile">{Math.round(s.efficiency)}</td>
+                    <td style="padding: 0.5rem; text-align: center;">
+                      <span style={`font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 100px; background: var(--bg-s); color: ${lvlC[s.level_name] || 'var(--fg-4)'}; font-weight: 500; white-space: nowrap;`}>
+                        {s.level_name}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div style="text-align: center; padding: 3rem; border: 1px dashed var(--border); border-radius: var(--r);">
+          <p style="color: var(--fg-3);">No servers found in this category.</p>
+        </div>
+      )}
+
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <a href="/ranking/category" style="font-size: 0.85rem; color: var(--accent); text-decoration: none;">← All categories</a>
+        <a href="/ranking" style="font-size: 0.85rem; color: var(--fg-3); text-decoration: none;">← Full ranking</a>
+      </div>
+    </div>
+  </section>
+</Layout>
