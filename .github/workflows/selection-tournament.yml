@@ -1,0 +1,72 @@
+name: Selection Tournament (Layer 2)
+on:
+  schedule:
+    - cron: '0 5 1 * *'    # 毎月1日 5:00 UTC (日本時間 14:00)
+  workflow_dispatch:         # 手動実行も可能
+    inputs:
+      rounds:
+        description: 'Number of tournament rounds'
+        type: number
+        default: 100
+      category:
+        description: 'Server category (leave empty for all)'
+        type: string
+        default: ''
+      dry-run:
+        description: 'Dry run (no API calls, random results)'
+        type: boolean
+        default: false
+
+jobs:
+  tournament:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Run Selection Tournament
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cd packages/scanner
+
+          ROUNDS="${{ inputs.rounds || 100 }}"
+          CATEGORY="${{ inputs.category }}"
+          DRY_RUN="${{ inputs.dry-run }}"
+
+          ARGS="--rounds $ROUNDS"
+
+          if [ -n "$CATEGORY" ]; then
+            ARGS="$ARGS --category $CATEGORY"
+          else
+            ARGS="$ARGS --all"
+          fi
+
+          # schedule: always live
+          # workflow_dispatch: respect dry-run
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "Scheduled run — live tournament"
+            python3 selection_tournament.py $ARGS --output /tmp/results.json
+          elif [ "$DRY_RUN" = "true" ]; then
+            echo "Manual dry-run"
+            python3 selection_tournament.py $ARGS --dry-run --output /tmp/results.json
+          else
+            echo "Manual run — live tournament"
+            python3 selection_tournament.py $ARGS --output /tmp/results.json
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tournament-results-${{ github.run_id }}
+          path: /tmp/results.json
+          retention-days: 90
