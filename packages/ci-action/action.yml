@@ -147,7 +147,7 @@ runs:
       if: inputs.server-id != '' && (inputs.mode == 'pre-release' || inputs.mode == 'post-deploy')
       shell: bash
       run: |
-        TRUST=$(curl -s "https://toolrank.dev/api/trust-status/${{ inputs.server-id }}.json")
+        TRUST=$(curl -s "https://mcp.toolrank.dev/api/trust-status/${{ inputs.server-id }}")
         TRUST_LEVEL=$(echo "$TRUST" | python3 -c "import sys,json; print(json.load(sys.stdin).get('trust_level',0))" 2>/dev/null || echo "0")
         SEL_RATE=$(echo "$TRUST" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('selection',{}).get('win_rate',''))" 2>/dev/null || echo "")
         TRUST_LABEL=$(echo "$TRUST" | python3 -c "import sys,json; print(json.load(sys.stdin).get('trust_label','Unverified'))" 2>/dev/null || echo "Unverified")

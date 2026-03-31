@@ -1,7 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import react from '@astrojs/react';
-import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
   site: 'https://toolrank.dev',
@@ -10,7 +9,6 @@ export default defineConfig({
     react(),
   ],
   output: 'static',
-  adapter: cloudflare(),
   build: {
     inlineStylesheets: 'auto',
   },

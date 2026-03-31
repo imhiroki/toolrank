@@ -386,6 +386,122 @@ export default {
       });
     }
 
+    // === Trust Status API — per-server trust profile ===
+    if (request.method === "GET" && url.pathname.startsWith("/api/trust-status/")) {
+      const serverId = url.pathname.replace("/api/trust-status/", "").replace(".json", "");
+      if (!serverId || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+        return new Response(JSON.stringify({ error: "Missing server ID or DB config" }), {
+          status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      const sbHeaders = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+      let tier = null, server = null;
+      try {
+        const r = await fetch(`${env.SUPABASE_URL}/rest/v1/trust_tiers?server_id=eq.${serverId}&limit=1`, { headers: sbHeaders });
+        const d = await r.json(); tier = d?.[0] || null;
+      } catch {}
+      try {
+        const r = await fetch(`${env.SUPABASE_URL}/rest/v1/servers?id=eq.${serverId}&select=id,server_name,display_name&limit=1`, { headers: sbHeaders });
+        const d = await r.json(); server = d?.[0] || null;
+      } catch {}
+      if (!tier && !server) {
+        return new Response(JSON.stringify({ error: "Server not found" }), {
+          status: 404, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      const tl = tier?.trust_level ?? 0;
+      const trustLabels = { 0: "Unverified", 1: "Spec Verified", 2: "Selection Verified", 3: "Fully Verified" };
+      const status = {
+        server_id: serverId,
+        server_name: tier?.server_name || server?.display_name || server?.server_name || "",
+        trust_level: tl,
+        trust_label: trustLabels[tl] || "Unverified",
+        spec: { verified: tier?.spec_verified === "earned", score: tier?.spec_verified_score || null, verified_at: tier?.spec_verified_at || null },
+        selection: { verified: tier?.selection_verified === "earned", win_rate: tier?.selection_verified_rate || null, verified_at: tier?.selection_verified_at || null },
+        runtime: { verified: tier?.runtime_verified === "earned", verified_at: tier?.runtime_verified_at || null },
+        recommended: tl >= 2,
+        deployment_safe: tl >= 1,
+        audit_url: `https://toolrank.dev/trust/${serverId}/audit`,
+        details_url: `https://toolrank.dev/ranking/${server?.server_name || ""}`,
+        badge_url: `${url.origin}/api/trust-badge/${serverId}.svg`,
+      };
+      return new Response(JSON.stringify(status), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=300", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
+    // === Trusted List API — verified servers for registries ===
+    if (request.method === "GET" && url.pathname === "/api/trusted-list") {
+      if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_KEY) {
+        return new Response(JSON.stringify({ error: "DB not configured" }), {
+          status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+      const minTrust = parseInt(url.searchParams.get("min_trust") || "1");
+      const limit = Math.min(parseInt(url.searchParams.get("limit") || "20"), 100);
+      const sbHeaders = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+      try {
+        const r = await fetch(`${env.SUPABASE_URL}/rest/v1/trust_tiers?trust_level=gte.${minTrust}&order=trust_level.desc&limit=${limit}`, { headers: sbHeaders });
+        const tiers = await r.json();
+        const servers = (tiers || []).map((t, i) => ({
+          server_id: t.server_id, server_name: t.server_name,
+          trust_level: t.trust_level, spec_score: t.spec_verified_score,
+          selection_rate: t.selection_verified_rate, rank: i + 1,
+          details_url: `https://toolrank.dev/servers/${t.server_id}`,
+        }));
+        return new Response(JSON.stringify({
+          min_trust_level: minTrust, count: servers.length, servers,
+          _meta: { provider: "ToolRank", api_version: "v1", docs: "https://toolrank.dev/docs/api" },
+        }), {
+          headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=600", "Access-Control-Allow-Origin": "*" }
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Query failed" }), {
+          status: 500, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+    }
+
+    // === Trust Badge SVG — embeddable trust tier badge ===
+    if (request.method === "GET" && url.pathname.startsWith("/api/trust-badge/")) {
+      const serverId = url.pathname.replace("/api/trust-badge/", "").replace(".svg", "");
+      if (!serverId) return new Response("Missing ID", { status: 400 });
+      let tl = 0, score = "—", winRate = "", label = "Unverified";
+      if (env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY) {
+        const sbHeaders = { apikey: env.SUPABASE_SERVICE_KEY, Authorization: `Bearer ${env.SUPABASE_SERVICE_KEY}` };
+        try {
+          const r = await fetch(`${env.SUPABASE_URL}/rest/v1/trust_tiers?server_id=eq.${serverId}&limit=1`, { headers: sbHeaders });
+          const d = await r.json(); const tier = d?.[0];
+          if (tier) {
+            tl = tier.trust_level || 0;
+            score = tier.spec_verified_score ? Math.round(tier.spec_verified_score).toString() : "—";
+            winRate = tier.selection_verified_rate ? ` | Win ${Math.round(tier.selection_verified_rate)}%` : "";
+            label = { 0: "Unverified", 1: "Spec Verified", 2: "Selection Verified", 3: "Fully Verified" }[tl] || "Unverified";
+          }
+        } catch {}
+      }
+      const color = { 0: "#6b7280", 1: "#3b82f6", 2: "#8b5cf6", 3: "#10b981" }[tl] || "#6b7280";
+      const valueText = `${label} ${score}${winRate}`;
+      const labelWidth = 80;
+      const valueWidth = Math.max(90, valueText.length * 7 + 16);
+      const totalWidth = labelWidth + valueWidth;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="24" role="img" aria-label="ToolRank Trust: ${label}">
+  <title>ToolRank Trust: ${label} — Score ${score}${winRate}</title>
+  <clipPath id="r"><rect width="${totalWidth}" height="24" rx="4" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${labelWidth}" height="24" fill="#1a1a2e"/>
+    <rect x="${labelWidth}" width="${valueWidth}" height="24" fill="${color}"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,sans-serif" font-size="11">
+    <text x="${labelWidth / 2}" y="16.5">ToolRank</text>
+    <text x="${labelWidth + valueWidth / 2}" y="16.5" font-weight="bold">${valueText}</text>
+  </g>
+</svg>`;
+      return new Response(svg, {
+        headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
     // MCP endpoint
     if (request.method === "POST" && (url.pathname === "/mcp" || url.pathname === "/")) {
       try {

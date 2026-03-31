@@ -12,7 +12,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@astrojs/cloudflare": "^13.0.0",
     "@astrojs/react": "^5.0.2",
     "@astrojs/sitemap": "^3.7.2",
     "@supabase/supabase-js": "^2.100.1",
