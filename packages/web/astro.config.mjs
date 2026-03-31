@@ -9,7 +9,7 @@ export default defineConfig({
     sitemap(),
     react(),
   ],
-  output: 'hybrid',
+  output: 'static',
   adapter: cloudflare(),
   build: {
     inlineStylesheets: 'auto',
