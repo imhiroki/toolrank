@@ -227,13 +227,13 @@ const dedupedScores = scores.filter(s => {
                       </td>
                       <td class="hide-mobile">
                         {(() => {
-                          const tl = (s as any).trust_level ?? (s.total_score >= 85 ? 1 : 0);
-                          const trustIcons: Record<number, string> = { 0: '○', 1: '📋', 2: '🎯', 3: '⚡' };
-                          const trustLabels: Record<number, string> = { 0: '', 1: 'Spec', 2: 'Selection', 3: 'Full' };
-                          const trustColors: Record<number, string> = { 0: 'var(--fg-4)', 1: '#3b82f6', 2: '#8b5cf6', 3: '#10b981' };
+                          const tl = (s).trust_level ?? (s.total_score >= 85 ? 1 : 0);
+                          const trustIcons = { 0: '○', 1: '📋', 2: '🎯', 3: '⚡' };
+                          const trustLabels = { 0: '', 1: 'Spec', 2: 'Selection', 3: 'Full' };
+                          const trustColors = { 0: 'var(--fg-4)', 1: '#3b82f6', 2: '#8b5cf6', 3: '#10b981' };
                           return (
-                            <span style={`font-size:0.6rem;color:${trustColors[tl]};white-space:nowrap;`} title={`Trust Level ${tl}`}>
-                              {trustIcons[tl]} {trustLabels[tl]}
+                            <span style={`font-size:0.6rem;color:${trustColors[tl] || 'var(--fg-4)'};white-space:nowrap;`} title={`Trust Level ${tl}`}>
+                              {trustIcons[tl] || '○'} {trustLabels[tl] || ''}
                             </span>
                           );
                         })()}
