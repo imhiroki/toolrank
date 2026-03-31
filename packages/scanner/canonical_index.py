@@ -120,10 +120,6 @@ def is_test_server(server: dict) -> tuple[bool, str]:
         if all_test and tool_names:
             return True, f"All tools match test patterns: {tool_names}"
 
-    # Check if description is too short (< 20 chars) AND has < 3 tools
-    if len(desc) < 20 and len(tools) < 3:
-        return True, "Minimal description and few tools (likely placeholder)"
-
     return False, ""
 
 
