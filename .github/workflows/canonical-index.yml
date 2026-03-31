@@ -1,0 +1,44 @@
+name: Canonical Index Clean
+on:
+  schedule:
+    - cron: '0 3 * * 0'   # 毎週日曜 3:00 UTC (日本時間 12:00)
+  workflow_dispatch:        # 手動実行も可能
+    inputs:
+      dry-run:
+        description: 'Dry run (preview only, no DB writes)'
+        type: boolean
+        default: false
+
+jobs:
+  clean-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Run Canonical Index
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/scanner
+
+          # workflow_dispatch: respect dry-run input
+          # schedule: always apply
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "Scheduled run — applying changes"
+            python3 canonical_index.py --scan --apply
+          elif [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "Manual dry-run"
+            python3 canonical_index.py --scan --dry-run
+          else
+            echo "Manual run — applying changes"
+            python3 canonical_index.py --scan --apply
+          fi
