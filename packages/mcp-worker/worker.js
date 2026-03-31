@@ -339,17 +339,7 @@ export default {
         headers: { "Content-Type": "application/javascript", "Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*" }
       });
     }
-    // DEBUG: env check (remove after testing)
-    if (request.method === "GET" && url.pathname === "/api/debug-env") {
-      return new Response(JSON.stringify({
-        has_url: !!env.SUPABASE_URL,
-        url_prefix: env.SUPABASE_URL ? env.SUPABASE_URL.substring(0, 20) + "..." : "MISSING",
-        has_key: !!env.SUPABASE_SERVICE_KEY,
-        key_prefix: env.SUPABASE_SERVICE_KEY ? env.SUPABASE_SERVICE_KEY.substring(0, 10) + "..." : "MISSING",
-      }), {
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+    
     // === Stats API — embeddable ecosystem numbers ===
     if (request.method === "GET" && url.pathname === "/api/stats") {
       // Return citable ecosystem stats (cached 1hr)
