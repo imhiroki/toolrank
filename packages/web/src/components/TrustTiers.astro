@@ -1,0 +1,392 @@
+---
+/**
+ * TrustTiers.astro
+ * =================
+ * Displays the 3-layer trust verification system.
+ * Each tier has: requirements, expiry, verification method, audit log link.
+ *
+ * Counters: "Badge is self-declaration" attack vector.
+ * Strategy: Show that each tier is EARNED, has CONDITIONS, and EXPIRES.
+ */
+
+interface Props {
+  serverId: string;
+  serverName: string;
+  specScore?: number;
+  specVerified?: string;      // 'earned' | 'none' | 'expired'
+  specVerifiedAt?: string;
+  specExpiresAt?: string;
+  selectionRate?: number;
+  selectionVerified?: string;
+  selectionVerifiedAt?: string;
+  selectionExpiresAt?: string;
+  runtimeVerified?: string;
+  runtimeVerifiedAt?: string;
+  runtimeExpiresAt?: string;
+  trustLevel?: number;
+  compact?: boolean;          // Compact mode for listings
+}
+
+const {
+  serverId,
+  serverName,
+  specScore,
+  specVerified = 'none',
+  specVerifiedAt,
+  specExpiresAt,
+  selectionRate,
+  selectionVerified = 'none',
+  selectionVerifiedAt,
+  selectionExpiresAt,
+  runtimeVerified = 'none',
+  runtimeVerifiedAt,
+  runtimeExpiresAt,
+  trustLevel = 0,
+  compact = false,
+} = Astro.props;
+
+// Trust level label
+const trustLabels: Record<number, string> = {
+  0: 'Unverified',
+  1: 'Spec Verified',
+  2: 'Selection Verified',
+  3: 'Fully Verified',
+};
+
+// Tier definitions with requirements
+const tiers = [
+  {
+    id: 'spec',
+    name: 'Spec Verified',
+    icon: '📋',
+    status: specVerified,
+    verifiedAt: specVerifiedAt,
+    expiresAt: specExpiresAt,
+    metric: specScore ? `${Math.round(specScore)}/100` : '—',
+    metricLabel: 'Spec Score',
+    requirement: 'Score ≥ 85 on ToolRank Spec Quality analysis',
+    method: 'Automated static analysis of tool definitions, descriptions, parameters, error handling',
+    renewal: 'Re-verified on every scan (weekly)',
+    color: specVerified === 'earned' ? '#3b82f6' : '#374151',
+    bgColor: specVerified === 'earned' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(55, 65, 81, 0.04)',
+  },
+  {
+    id: 'selection',
+    name: 'Selection Verified',
+    icon: '🎯',
+    status: selectionVerified,
+    verifiedAt: selectionVerifiedAt,
+    expiresAt: selectionExpiresAt,
+    metric: selectionRate ? `${Math.round(selectionRate)}%` : '—',
+    metricLabel: 'Win Rate',
+    requirement: 'Selection win rate ≥ 70% in 100-round LLM tournament',
+    method: 'Claude Sonnet selects best tool for realistic tasks vs. competing servers',
+    renewal: 'Re-tested monthly; expires if win rate drops below 60%',
+    color: selectionVerified === 'earned' ? '#8b5cf6' : '#374151',
+    bgColor: selectionVerified === 'earned' ? 'rgba(139, 92, 246, 0.08)' : 'rgba(55, 65, 81, 0.04)',
+  },
+  {
+    id: 'runtime',
+    name: 'Runtime Verified',
+    icon: '⚡',
+    status: runtimeVerified,
+    verifiedAt: runtimeVerifiedAt,
+    expiresAt: runtimeExpiresAt,
+    metric: runtimeVerified === 'earned' ? 'Passed' : '—',
+    metricLabel: 'Status',
+    requirement: 'Task success rate ≥ 90%, error rate < 5%, avg latency < 2s',
+    method: 'End-to-end execution tests in sandboxed environment',
+    renewal: 'Continuously monitored; revoked on sustained failure',
+    color: runtimeVerified === 'earned' ? '#10b981' : '#374151',
+    bgColor: runtimeVerified === 'earned' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(55, 65, 81, 0.04)',
+  },
+];
+
+function formatDate(iso?: string): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case 'earned': return '✓ Verified';
+    case 'expired': return '⚠ Expired';
+    case 'revoked': return '✗ Revoked';
+    default: return '○ Not yet';
+  }
+}
+---
+
+{compact ? (
+  <!-- Compact mode: single row for listings -->
+  <div class="trust-compact" data-level={trustLevel}>
+    <span class="trust-compact__level" style={`color: ${tiers[Math.min(trustLevel, 2)]?.color || '#374151'}`}>
+      {trustLevel === 3 ? '⚡' : trustLevel === 2 ? '🎯' : trustLevel === 1 ? '📋' : '○'}
+    </span>
+    <span class="trust-compact__label">
+      {trustLabels[trustLevel] || 'Unverified'}
+    </span>
+    {specScore && <span class="trust-compact__score">{Math.round(specScore)}</span>}
+    {selectionRate && <span class="trust-compact__rate">{Math.round(selectionRate)}%</span>}
+  </div>
+) : (
+  <!-- Full mode: detailed tier cards -->
+  <div class="trust-tiers">
+    <div class="trust-tiers__header">
+      <h3 class="trust-tiers__title">Trust Verification</h3>
+      <div class="trust-tiers__level" data-level={trustLevel}>
+        <span class="trust-tiers__level-number">{trustLevel}</span>
+        <span class="trust-tiers__level-label">{trustLabels[trustLevel]}</span>
+      </div>
+    </div>
+
+    <div class="trust-tiers__grid">
+      {tiers.map((tier) => (
+        <div
+          class={`trust-tier ${tier.status === 'earned' ? 'trust-tier--earned' : ''} ${tier.status === 'expired' ? 'trust-tier--expired' : ''}`}
+          style={`border-color: ${tier.color}; background: ${tier.bgColor}`}
+        >
+          <div class="trust-tier__head">
+            <span class="trust-tier__icon">{tier.icon}</span>
+            <span class="trust-tier__name">{tier.name}</span>
+            <span class="trust-tier__status" style={`color: ${tier.color}`}>
+              {statusLabel(tier.status)}
+            </span>
+          </div>
+
+          <div class="trust-tier__metric">
+            <span class="trust-tier__metric-value" style={`color: ${tier.color}`}>{tier.metric}</span>
+            <span class="trust-tier__metric-label">{tier.metricLabel}</span>
+          </div>
+
+          <div class="trust-tier__details">
+            <div class="trust-tier__detail">
+              <span class="trust-tier__detail-label">Requirement</span>
+              <span class="trust-tier__detail-value">{tier.requirement}</span>
+            </div>
+            <div class="trust-tier__detail">
+              <span class="trust-tier__detail-label">Method</span>
+              <span class="trust-tier__detail-value">{tier.method}</span>
+            </div>
+            <div class="trust-tier__detail">
+              <span class="trust-tier__detail-label">Renewal</span>
+              <span class="trust-tier__detail-value">{tier.renewal}</span>
+            </div>
+            {tier.verifiedAt && (
+              <div class="trust-tier__detail">
+                <span class="trust-tier__detail-label">Verified</span>
+                <span class="trust-tier__detail-value">{formatDate(tier.verifiedAt)}</span>
+              </div>
+            )}
+            {tier.expiresAt && (
+              <div class="trust-tier__detail">
+                <span class="trust-tier__detail-label">Expires</span>
+                <span class="trust-tier__detail-value">{formatDate(tier.expiresAt)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="trust-tiers__footer">
+      <a href={`/trust/${serverId}/audit`} class="trust-tiers__audit-link">
+        View full audit log →
+      </a>
+      <span class="trust-tiers__embed">
+        <code>![Trust](https://toolrank.dev/api/trust-badge/{serverId}.svg)</code>
+      </span>
+    </div>
+  </div>
+)}
+
+<style>
+  .trust-tiers {
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    max-width: 100%;
+  }
+
+  .trust-tiers__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .trust-tiers__title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text, #e2e8f0);
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+
+  .trust-tiers__level {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .trust-tiers__level[data-level="0"] { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+  .trust-tiers__level[data-level="1"] { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+  .trust-tiers__level[data-level="2"] { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+  .trust-tiers__level[data-level="3"] { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+
+  .trust-tiers__level-number {
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .trust-tiers__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .trust-tiers__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .trust-tier {
+    border: 1px solid;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+  }
+
+  .trust-tier:hover {
+    transform: translateY(-2px);
+  }
+
+  .trust-tier__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .trust-tier__icon {
+    font-size: 1.25rem;
+  }
+
+  .trust-tier__name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-text, #e2e8f0);
+    flex: 1;
+  }
+
+  .trust-tier__status {
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .trust-tier__metric {
+    text-align: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem 0;
+  }
+
+  .trust-tier__metric-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .trust-tier__metric-label {
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.25rem;
+    display: block;
+  }
+
+  .trust-tier__details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .trust-tier__detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .trust-tier__detail-label {
+    color: var(--color-text-muted, #64748b);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.65rem;
+  }
+
+  .trust-tier__detail-value {
+    color: var(--color-text, #cbd5e1);
+    line-height: 1.4;
+  }
+
+  .trust-tiers__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .trust-tiers__audit-link {
+    color: var(--color-primary, #8b5cf6);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .trust-tiers__audit-link:hover {
+    text-decoration: underline;
+  }
+
+  .trust-tiers__embed code {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(148, 163, 184, 0.08);
+    border-radius: 4px;
+    color: var(--color-text-muted, #64748b);
+    user-select: all;
+  }
+
+  /* Compact mode */
+  .trust-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    background: rgba(148, 163, 184, 0.06);
+  }
+
+  .trust-compact__label {
+    font-weight: 600;
+    color: var(--color-text, #e2e8f0);
+  }
+
+  .trust-compact__score,
+  .trust-compact__rate {
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #94a3b8);
+  }
+</style>

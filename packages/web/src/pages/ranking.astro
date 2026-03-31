@@ -26,6 +26,10 @@ const seen = new Map<string, number>();
 const fpCounts = new Map<string, number>();
 
 const dedupedScores = scores.filter(s => {
+  // DB-level canonical flags (from canonical_index.py)
+  if ((s as any).is_test === true) return false;
+  if ((s as any).is_canonical === false) return false;
+
   const name = s.display_name || s.server_name || '';
   const namePart = (s.server_name || '').split('/').pop() || '';
 
@@ -196,6 +200,7 @@ const dedupedScores = scores.filter(s => {
                   <th class="hide-mobile" data-sort="p">P ↕</th>
                   <th class="hide-mobile" data-sort="e">E ↕</th>
                   <th>Level</th>
+                  <th class="hide-mobile">Trust</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,6 +224,19 @@ const dedupedScores = scores.filter(s => {
                         <span style={`font-size:0.65rem;padding:0.15rem 0.4rem;border-radius:100px;background:var(--bg-s);color:${lvlC[s.level_name] || 'var(--fg-4)'};font-weight:500;white-space:nowrap;`}>
                           {s.level_name}
                         </span>
+                      </td>
+                      <td class="hide-mobile">
+                        {(() => {
+                          const tl = (s as any).trust_level ?? (s.total_score >= 85 ? 1 : 0);
+                          const trustIcons: Record<number, string> = { 0: '○', 1: '📋', 2: '🎯', 3: '⚡' };
+                          const trustLabels: Record<number, string> = { 0: '', 1: 'Spec', 2: 'Selection', 3: 'Full' };
+                          const trustColors: Record<number, string> = { 0: 'var(--fg-4)', 1: '#3b82f6', 2: '#8b5cf6', 3: '#10b981' };
+                          return (
+                            <span style={`font-size:0.6rem;color:${trustColors[tl]};white-space:nowrap;`} title={`Trust Level ${tl}`}>
+                              {trustIcons[tl]} {trustLabels[tl]}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );

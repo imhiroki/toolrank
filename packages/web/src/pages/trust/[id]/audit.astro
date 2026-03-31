@@ -1,0 +1,135 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { supabase } from '../../../lib/supabase';
+
+export async function getStaticPaths() {
+  if (!supabase) return [];
+  try {
+    const { data } = await supabase.from('trust_tiers').select('server_id').limit(500);
+    if (!data) return [];
+    return data.map(t => ({ params: { id: t.server_id } }));
+  } catch { return []; }
+}
+
+const { id } = Astro.params;
+
+let server: any = null;
+let trustTier: any = null;
+let auditLog: any[] = [];
+
+if (supabase && id) {
+  try {
+    const { data } = await supabase.from('servers').select('*').eq('id', id).single();
+    server = data;
+  } catch {}
+
+  try {
+    const { data } = await supabase.from('trust_tiers').select('*').eq('server_id', id).single();
+    trustTier = data;
+  } catch {}
+
+  try {
+    const { data } = await supabase.from('trust_audit_log')
+      .select('*').eq('server_id', id)
+      .order('created_at', { ascending: false }).limit(100);
+    auditLog = data || [];
+  } catch {}
+}
+
+const serverName = server?.display_name || server?.server_name || trustTier?.server_name || id;
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function actionIcon(action: string): string {
+  const icons: Record<string, string> = {
+    tier_earned: '✅', tier_expired: '⏰', tier_revoked: '❌',
+    selection_run: '🎯', score_updated: '📊',
+  };
+  return icons[action] || '📝';
+}
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    tier_earned: 'Tier Earned', tier_expired: 'Tier Expired', tier_revoked: 'Tier Revoked',
+    selection_run: 'Selection Test', score_updated: 'Score Updated',
+  };
+  return labels[action] || action;
+}
+---
+
+<Layout title={`Trust Audit — ${serverName}`}
+  breadcrumbs={[{ label: 'Ranking', href: '/ranking' }, { label: serverName, href: `/ranking/${server?.server_name || ''}` }, { label: 'Audit', href: '' }]}>
+
+  <section style="padding: 3rem 0 1rem;">
+    <div class="w" style="max-width: 720px;">
+      <a href={`/ranking/${server?.server_name || ''}`} style="font-size: 0.8rem; color: var(--accent); text-decoration: none;">← Back to server</a>
+      <h1 style="font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0.2rem;">Trust Audit Log</h1>
+      <p style="font-size: 0.85rem; color: var(--fg-3);">{serverName}</p>
+    </div>
+  </section>
+
+  {trustTier && (
+    <section style="padding: 0 0 1.5rem;">
+      <div class="w" style="max-width: 720px;">
+        <div style="display: flex; gap: 1.5rem; padding: 1rem; background: var(--bg-s); border-radius: var(--r);">
+          <div style="text-align: center;">
+            <p style="font-size: 0.6rem; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Trust Level</p>
+            <p style="font-size: 1.5rem; font-weight: 800;">{trustTier.trust_level ?? 0}/3</p>
+          </div>
+          {['spec', 'selection', 'runtime'].map(tier => {
+            const verified = trustTier[`${tier}_verified`] === 'earned';
+            return (
+              <div style="text-align: center;">
+                <p style="font-size: 0.6rem; color: var(--fg-4); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">{tier}</p>
+                <p style={`font-size: 1rem; color: ${verified ? 'var(--ok)' : 'var(--fg-4)'};`}>{verified ? '✓' : '○'}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section style="padding: 0 0 4rem;">
+    <div class="w" style="max-width: 720px;">
+      {auditLog.length === 0 ? (
+        <div style="text-align: center; padding: 3rem; color: var(--fg-4); font-size: 0.85rem;">
+          <p>No audit entries yet. Trust tiers will be logged here as they are earned, expired, or revoked.</p>
+        </div>
+      ) : (
+        <div style="position: relative; padding-left: 2.5rem;">
+          <div style="position: absolute; left: 1rem; top: 0; bottom: 0; width: 2px; background: var(--border);"></div>
+          {auditLog.map((entry: any) => (
+            <div style="position: relative; margin-bottom: 1.5rem;">
+              <div style="position: absolute; left: -1.75rem; top: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: var(--bg); border-radius: 50%; z-index: 1; font-size: 0.85rem;">
+                {actionIcon(entry.action)}
+              </div>
+              <div style="padding: 0.75rem 1rem; background: var(--bg-s); border-radius: var(--r); border: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+                  <span style="font-size: 0.8rem; font-weight: 700;">{actionLabel(entry.action)}</span>
+                  {entry.tier_name && (
+                    <span style="font-size: 0.6rem; padding: 0.1rem 0.4rem; border-radius: 99px; background: var(--accent-s); color: var(--accent); font-weight: 600;">{entry.tier_name}</span>
+                  )}
+                  <span style="font-size: 0.7rem; color: var(--fg-4); margin-left: auto;">{formatDate(entry.created_at)}</span>
+                </div>
+                {entry.reason && <p style="font-size: 0.78rem; color: var(--fg-2); margin: 0.3rem 0;">{entry.reason}</p>}
+                {(entry.old_value || entry.new_value) && (
+                  <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; margin-top: 0.3rem;">
+                    {entry.old_value && <span style="color: var(--err); text-decoration: line-through;">{entry.old_value}</span>}
+                    {entry.old_value && entry.new_value && <span style="color: var(--fg-4);">→</span>}
+                    {entry.new_value && <span style="color: var(--ok); font-weight: 600;">{entry.new_value}</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+</Layout>

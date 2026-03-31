@@ -1,8 +1,8 @@
-name: 'ToolRank Score'
-description: 'Score MCP tool definitions on every PR. Posts ToolRank Score as a PR comment with fix suggestions.'
+name: 'ToolRank Trust Gate'
+description: 'Score, verify, and gate MCP servers. Supports pre-merge (spec check), pre-release (selection rate), and post-deploy (trust level) gates.'
 author: 'ToolRank (imhiroki)'
 branding:
-  icon: 'check-circle'
+  icon: 'shield'
   color: 'purple'
 
 inputs:
@@ -22,6 +22,18 @@ inputs:
     description: 'Post score as PR comment'
     required: false
     default: 'true'
+  mode:
+    description: 'Gate mode: score (default, report only), pre-merge, pre-release, post-deploy'
+    required: false
+    default: 'score'
+  min-selection-rate:
+    description: 'Minimum selection win rate for pre-release gate (0-100)'
+    required: false
+    default: '60'
+  server-id:
+    description: 'ToolRank server UUID (required for pre-release/post-deploy trust checks)'
+    required: false
+    default: ''
 
 outputs:
   score:
@@ -30,6 +42,12 @@ outputs:
     description: 'Score level (Dominant/Preferred/Selectable)'
   passed:
     description: 'Whether score meets min-score threshold'
+  trust-level:
+    description: 'Trust level (0-3) if server-id provided'
+  selection-rate:
+    description: 'Selection win rate if available'
+  gate-passed:
+    description: 'Whether the trust gate passed'
 
 runs:
   using: 'composite'
@@ -44,7 +62,7 @@ runs:
       id: score
       run: |
         pip install httpx -q
-        curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/v1.0.0/packages/scoring/toolrank_score.py -o /tmp/toolrank_score.py
+        curl -sL https://raw.githubusercontent.com/imhiroki/toolrank/main/packages/scoring/toolrank_score.py -o /tmp/toolrank_score.py
         python3 << 'PYEOF'
         import json, sys, glob, os
         sys.path.insert(0, '/tmp')
@@ -92,7 +110,7 @@ runs:
         passed = avg_all >= min_score or min_score == 0
         lv = 'Dominant' if avg_all>=85 else 'Preferred' if avg_all>=70 else 'Selectable' if avg_all>=50 else 'Low'
         lines.append("---")
-        lines.append(f"<sub>Scored by [ToolRank](https://toolrank.dev) v1.0.0 · [Improve your score](https://toolrank.dev/score) · [Get badge](https://toolrank.dev/badge)</sub>")
+        lines.append(f"<sub>Scored by [ToolRank](https://toolrank.dev) v2.0.0 · [Improve your score](https://toolrank.dev/score) · [Get badge](https://toolrank.dev/badge) · [CI/CD Gates](https://toolrank.dev/docs/ci)</sub>")
         open('/tmp/toolrank-comment.md','w').write("\n".join(lines))
         with open(os.environ['GITHUB_OUTPUT'],'a') as f:
             f.write(f"score={round(avg_all,1)}\nlevel={lv}\npassed={'true' if passed else 'false'}\n")
@@ -122,3 +140,80 @@ runs:
             await github.rest.issues.createComment({
               owner:context.repo.owner, repo:context.repo.repo, issue_number:context.issue.number, body});
           }
+
+    # ── Trust Gate: Fetch trust status (pre-release / post-deploy) ──
+    - name: Fetch Trust Status
+      id: trust
+      if: inputs.server-id != '' && (inputs.mode == 'pre-release' || inputs.mode == 'post-deploy')
+      shell: bash
+      run: |
+        TRUST=$(curl -s "https://toolrank.dev/api/trust-status/${{ inputs.server-id }}.json")
+        TRUST_LEVEL=$(echo "$TRUST" | python3 -c "import sys,json; print(json.load(sys.stdin).get('trust_level',0))" 2>/dev/null || echo "0")
+        SEL_RATE=$(echo "$TRUST" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('selection',{}).get('win_rate',''))" 2>/dev/null || echo "")
+        TRUST_LABEL=$(echo "$TRUST" | python3 -c "import sys,json; print(json.load(sys.stdin).get('trust_label','Unverified'))" 2>/dev/null || echo "Unverified")
+        echo "trust_level=$TRUST_LEVEL" >> $GITHUB_OUTPUT
+        echo "selection_rate=$SEL_RATE" >> $GITHUB_OUTPUT
+        echo "trust_label=$TRUST_LABEL" >> $GITHUB_OUTPUT
+        echo "Trust Level: $TRUST_LEVEL ($TRUST_LABEL) | Selection Rate: ${SEL_RATE:-N/A}"
+
+    # ── Trust Gate: Evaluate ──
+    - name: Evaluate Trust Gate
+      id: gate
+      if: inputs.mode != 'score'
+      shell: bash
+      run: |
+        MODE="${{ inputs.mode }}"
+        SCORE="${{ steps.score.outputs.score }}"
+        MIN_SCORE="${{ inputs.min-score }}"
+        PASSED="true"
+        REASON=""
+
+        # Pre-merge: spec score check
+        if [ "$MODE" = "pre-merge" ] || [ "$MODE" = "pre-release" ]; then
+          if [ "$SCORE" != "skip" ] && [ "$MIN_SCORE" != "0" ]; then
+            SCORE_INT=$(echo "$SCORE" | cut -d. -f1)
+            if [ "$SCORE_INT" -lt "$MIN_SCORE" ]; then
+              PASSED="false"
+              REASON="Spec score $SCORE < minimum $MIN_SCORE"
+            fi
+          fi
+        fi
+
+        # Pre-release: selection rate check
+        if [ "$MODE" = "pre-release" ]; then
+          SEL_RATE="${{ steps.trust.outputs.selection_rate }}"
+          MIN_SEL="${{ inputs.min-selection-rate }}"
+          if [ -n "$SEL_RATE" ]; then
+            RATE_INT=$(echo "$SEL_RATE" | cut -d. -f1)
+            if [ "$RATE_INT" -lt "$MIN_SEL" ]; then
+              PASSED="false"
+              REASON="${REASON:+$REASON | }Selection rate ${SEL_RATE}% < minimum ${MIN_SEL}%"
+            fi
+          fi
+        fi
+
+        # Post-deploy: trust level check
+        if [ "$MODE" = "post-deploy" ]; then
+          TL="${{ steps.trust.outputs.trust_level }}"
+          if [ "${TL:-0}" -lt 1 ]; then
+            PASSED="false"
+            REASON="Trust level $TL < 1 (not verified)"
+          fi
+        fi
+
+        echo "gate_passed=$PASSED" >> $GITHUB_OUTPUT
+        echo "gate_reason=$REASON" >> $GITHUB_OUTPUT
+
+        if [ "$PASSED" = "true" ]; then
+          echo "✅ Trust gate PASSED ($MODE)"
+        else
+          echo "❌ Trust gate FAILED ($MODE): $REASON"
+        fi
+
+    # ── Trust Gate: Fail if needed ──
+    - name: Enforce Trust Gate
+      if: steps.gate.outputs.gate_passed == 'false' && inputs.mode != 'score'
+      shell: bash
+      run: |
+        echo "::error::ToolRank Trust Gate FAILED (${{ inputs.mode }}): ${{ steps.gate.outputs.gate_reason }}"
+        exit 1

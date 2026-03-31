@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
+import TrustTiers from '../../components/TrustTiers.astro';
 
 export async function getStaticPaths() {
   if (!supabase) return [];
@@ -15,6 +16,7 @@ const { server } = Astro.params;
 let current: any = null;
 let history: any[] = [];
 let similar: any[] = [];
+let trustTier: any = null;
 
 if (supabase && server) {
   try {
@@ -22,12 +24,20 @@ if (supabase && server) {
     current = data;
   } catch {}
 
-  if (current?.id) {
+  if (current?.server_id || current?.id) {
+    const sid = current.server_id || current.id;
     try {
       const { data } = await supabase.from('scores')
         .select('total_score, findability, clarity, precision, efficiency, scanned_at')
-        .eq('server_id', current.id).order('scanned_at', { ascending: true }).limit(30);
+        .eq('server_id', sid).order('scanned_at', { ascending: true }).limit(30);
       history = data || [];
+    } catch {}
+
+    // Fetch trust tier details
+    try {
+      const { data } = await supabase.from('trust_tiers')
+        .select('*').eq('server_id', sid).single();
+      trustTier = data;
     } catch {}
   }
 
@@ -47,7 +57,11 @@ if (supabase && server) {
 
 const lvlC: Record<string, string> = { Dominant: 'var(--accent)', Preferred: 'var(--ok)', Selectable: 'var(--warn)', Visible: 'var(--fg-4)', Absent: 'var(--err)' };
 
-const selRate = current ? (current.total_score >= 85 ? '~85%' : current.total_score >= 70 ? '~13-40%' : current.total_score >= 50 ? '~2-13%' : '<2%') : '—';
+const selRate = trustTier?.selection_verified_rate
+  ? `${Math.round(trustTier.selection_verified_rate)}%`
+  : current ? (current.total_score >= 85 ? '~85%' : current.total_score >= 70 ? '~13-40%' : current.total_score >= 50 ? '~2-13%' : '<2%') : '—';
+
+const hasRealSelectionData = !!trustTier?.selection_verified_rate;
 
 const percentile = current ? (current.total_score >= 95 ? 3 : current.total_score >= 90 ? 10 : current.total_score >= 85 ? 36 : current.total_score >= 80 ? 55 : current.total_score >= 70 ? 75 : current.total_score >= 50 ? 92 : 98) : 50;
 
@@ -179,21 +193,56 @@ const desc = current ? `${current.display_name || server} scores ${Math.round(cu
       <section style="padding: 1rem 0;">
         <div class="w" style="max-width: 720px;">
           <div style="border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Estimated selection rate</h2>
+            <h2 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">
+              {hasRealSelectionData ? 'Selection Win Rate' : 'Estimated selection rate'}
+            </h2>
             <p style="font-size: 1.5rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem;">{selRate}</p>
-            <p style="font-size: 0.75rem; color: var(--fg-3); line-height: 1.6;">
-              {current.total_score >= 85
-                ? `At ${Math.round(current.total_score)}/100, AI agents select tools like this approximately 85% of the time when choosing between competing alternatives. This server is in the top tier for agent discoverability.`
-                : current.total_score >= 70
-                ? `At ${Math.round(current.total_score)}/100, this tool is selected 13-40% of the time in competitive scenarios. Improving to 85+ would increase selection rate to approximately 85%.`
-                : current.total_score >= 50
-                ? `At ${Math.round(current.total_score)}/100, AI agents rarely select this tool (2-13% of the time). Most selections go to higher-scored alternatives in the same category.`
-                : `At ${Math.round(current.total_score)}/100, this tool is nearly invisible to AI agents. Significant improvements to tool definitions are needed.`}
-            </p>
+            {hasRealSelectionData ? (
+              <p style="font-size: 0.75rem; color: var(--fg-3); line-height: 1.6;">
+                Measured via 100-round LLM selection tournament. Claude Sonnet was presented 4 competing tools per round and asked to select the best for a realistic task. This server won {selRate} of rounds it appeared in.
+              </p>
+            ) : (
+              <p style="font-size: 0.75rem; color: var(--fg-3); line-height: 1.6;">
+                {current.total_score >= 85
+                  ? `At ${Math.round(current.total_score)}/100, AI agents select tools like this approximately 85% of the time when choosing between competing alternatives. This server is in the top tier for agent discoverability.`
+                  : current.total_score >= 70
+                  ? `At ${Math.round(current.total_score)}/100, this tool is selected 13-40% of the time in competitive scenarios. Improving to 85+ would increase selection rate to approximately 85%.`
+                  : current.total_score >= 50
+                  ? `At ${Math.round(current.total_score)}/100, AI agents rarely select this tool (2-13% of the time). Most selections go to higher-scored alternatives in the same category.`
+                  : `At ${Math.round(current.total_score)}/100, this tool is nearly invisible to AI agents. Significant improvements to tool definitions are needed.`}
+              </p>
+            )}
             <p style="font-size: 0.65rem; color: var(--fg-4); margin-top: 0.5rem;">
-              Based on 500-round selection simulation (Pearson r = 0.828). <a href="/framework" style="color: var(--fg-4); text-decoration: underline;">Methodology →</a>
+              {hasRealSelectionData
+                ? <>Layer 2: Real LLM selection data. <a href="/framework" style="color: var(--fg-4); text-decoration: underline;">Methodology →</a></>
+                : <>Based on 500-round selection simulation (Pearson r = 0.828). <a href="/framework" style="color: var(--fg-4); text-decoration: underline;">Methodology →</a></>
+              }
             </p>
           </div>
+        </div>
+      </section>
+
+      <!-- Trust Verification -->
+      <section style="padding: 1rem 0;">
+        <div class="w" style="max-width: 720px;">
+          <TrustTiers
+            serverId={current.server_id || current.id}
+            serverName={current.display_name || server}
+            specScore={current.total_score}
+            specVerified={trustTier?.spec_verified || (current.total_score >= 85 ? 'earned' : 'none')}
+            specVerifiedAt={trustTier?.spec_verified_at}
+            specExpiresAt={trustTier?.spec_expires_at}
+            selectionRate={trustTier?.selection_verified_rate}
+            selectionVerified={trustTier?.selection_verified || 'none'}
+            selectionVerifiedAt={trustTier?.selection_verified_at}
+            selectionExpiresAt={trustTier?.selection_expires_at}
+            runtimeVerified={trustTier?.runtime_verified || 'none'}
+            runtimeVerifiedAt={trustTier?.runtime_verified_at}
+            runtimeExpiresAt={trustTier?.runtime_expires_at}
+            trustLevel={trustTier?.trust_level ?? (current.total_score >= 85 ? 1 : 0)}
+          />
+        </div>
+      </section>
         </div>
       </section>
 

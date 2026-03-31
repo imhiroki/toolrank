@@ -1,0 +1,452 @@
+---
+/**
+ * TrustDashboard.astro
+ * ====================
+ * The "3 numbers" view that counters the "Agent Trust Cloud" UX attack.
+ *
+ * Instead of just "Score: 85/100", we show:
+ *   1. Selection Win Rate (do agents actually pick this tool?)
+ *   2. Spec Quality Score (is the tool definition correct?)
+ *   3. Trust Level (overall verification status)
+ *
+ * Plus: "What's blocking trust" — actionable blockers, not just suggestions.
+ */
+
+interface TrustBlocker {
+  severity: 'critical' | 'high' | 'medium';
+  category: string;
+  message: string;
+  impact: string;    // What this blocks (adoption, selection, reliability)
+}
+
+interface Props {
+  serverId: string;
+  serverName: string;
+  specScore: number;
+  selectionRate?: number;
+  trustLevel: number;
+  trustLabel: string;
+  isCanonical?: boolean;
+  maintenanceStatus?: string;
+  lastScanAt?: string;
+  toolCount?: number;
+  category?: string;
+  blockers?: TrustBlocker[];
+}
+
+const {
+  serverId,
+  serverName,
+  specScore = 0,
+  selectionRate,
+  trustLevel = 0,
+  trustLabel = 'Unverified',
+  isCanonical = true,
+  maintenanceStatus = 'active',
+  lastScanAt,
+  toolCount = 0,
+  category = '',
+  blockers = [],
+} = Astro.props;
+
+// Derive blockers from data if not provided
+const derivedBlockers: TrustBlocker[] = [...blockers];
+
+if (specScore < 85 && !blockers.find(b => b.category === 'spec')) {
+  derivedBlockers.push({
+    severity: specScore < 60 ? 'critical' : 'high',
+    category: 'spec',
+    message: `Spec quality ${Math.round(specScore)}/100 — below verification threshold (85)`,
+    impact: 'Blocks Spec Verified tier and CI/CD gate passage',
+  });
+}
+
+if (selectionRate !== undefined && selectionRate < 70) {
+  derivedBlockers.push({
+    severity: selectionRate < 40 ? 'critical' : 'high',
+    category: 'selection',
+    message: `Selection win rate ${Math.round(selectionRate)}% — agents prefer competitors`,
+    impact: 'Blocks Selection Verified tier and registry trusted placement',
+  });
+}
+
+if (!isCanonical) {
+  derivedBlockers.push({
+    severity: 'medium',
+    category: 'index',
+    message: 'This server is flagged as a duplicate or fork',
+    impact: 'Excluded from canonical rankings and trusted lists',
+  });
+}
+
+if (maintenanceStatus === 'abandoned') {
+  derivedBlockers.push({
+    severity: 'critical',
+    category: 'maintenance',
+    message: 'Repository appears abandoned (no commits in 365+ days)',
+    impact: 'Cannot earn or maintain any trust tier',
+  });
+}
+
+if (toolCount === 0) {
+  derivedBlockers.push({
+    severity: 'critical',
+    category: 'spec',
+    message: 'No tools detected in server manifest',
+    impact: 'Cannot be scored or verified',
+  });
+}
+
+const sortedBlockers = derivedBlockers.sort((a, b) => {
+  const order = { critical: 0, high: 1, medium: 2 };
+  return (order[a.severity] ?? 3) - (order[b.severity] ?? 3);
+});
+
+// Score ring colors
+function scoreColor(score: number): string {
+  if (score >= 85) return '#10b981';
+  if (score >= 70) return '#3b82f6';
+  if (score >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function rateColor(rate: number): string {
+  if (rate >= 70) return '#8b5cf6';
+  if (rate >= 50) return '#3b82f6';
+  return '#ef4444';
+}
+
+const trustColors: Record<number, string> = {
+  0: '#6b7280',
+  1: '#3b82f6',
+  2: '#8b5cf6',
+  3: '#10b981',
+};
+---
+
+<div class="trust-dashboard">
+  <!-- Hero: 3 Key Numbers -->
+  <div class="trust-dashboard__hero">
+    <!-- Selection Win Rate -->
+    <div class="trust-metric trust-metric--primary">
+      <div class="trust-metric__ring" style={`--ring-color: ${selectionRate !== undefined ? rateColor(selectionRate) : '#374151'}; --ring-pct: ${selectionRate ?? 0}`}>
+        <span class="trust-metric__value">
+          {selectionRate !== undefined ? `${Math.round(selectionRate)}%` : '—'}
+        </span>
+      </div>
+      <span class="trust-metric__label">Selection Win Rate</span>
+      <span class="trust-metric__sublabel">
+        {selectionRate !== undefined ? 'LLM tournament result' : 'Not yet tested'}
+      </span>
+    </div>
+
+    <!-- Spec Score -->
+    <div class="trust-metric">
+      <div class="trust-metric__ring" style={`--ring-color: ${scoreColor(specScore)}; --ring-pct: ${specScore}`}>
+        <span class="trust-metric__value">{Math.round(specScore)}</span>
+      </div>
+      <span class="trust-metric__label">Spec Quality</span>
+      <span class="trust-metric__sublabel">Static analysis score</span>
+    </div>
+
+    <!-- Trust Level -->
+    <div class="trust-metric">
+      <div class="trust-metric__badge" style={`--badge-color: ${trustColors[trustLevel] || '#6b7280'}`}>
+        <span class="trust-metric__level">{trustLevel}</span>
+        <span class="trust-metric__level-max">/3</span>
+      </div>
+      <span class="trust-metric__label">{trustLabel}</span>
+      <span class="trust-metric__sublabel">
+        {trustLevel === 3 ? 'All tiers earned' :
+         trustLevel === 0 ? 'No tiers earned' :
+         `${3 - trustLevel} tier${3 - trustLevel > 1 ? 's' : ''} remaining`}
+      </span>
+    </div>
+  </div>
+
+  <!-- What's Blocking Trust -->
+  {sortedBlockers.length > 0 && (
+    <div class="trust-blockers">
+      <h4 class="trust-blockers__title">
+        <span class="trust-blockers__icon">⚠</span>
+        What's Blocking Trust
+      </h4>
+      <div class="trust-blockers__list">
+        {sortedBlockers.map((blocker) => (
+          <div class={`trust-blocker trust-blocker--${blocker.severity}`}>
+            <div class="trust-blocker__head">
+              <span class="trust-blocker__severity">
+                {blocker.severity === 'critical' ? '🔴' : blocker.severity === 'high' ? '🟠' : '🟡'}
+              </span>
+              <span class="trust-blocker__category">{blocker.category}</span>
+            </div>
+            <p class="trust-blocker__message">{blocker.message}</p>
+            <p class="trust-blocker__impact">→ {blocker.impact}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {sortedBlockers.length === 0 && (
+    <div class="trust-clear">
+      <span class="trust-clear__icon">✅</span>
+      <span class="trust-clear__text">No trust blockers detected. This server meets all current verification requirements.</span>
+    </div>
+  )}
+
+  <!-- Quick Actions -->
+  <div class="trust-actions">
+    <a href={`/servers/${serverId}`} class="trust-action trust-action--primary">
+      View Full Analysis →
+    </a>
+    <a href={`/trust/${serverId}/audit`} class="trust-action">
+      Audit Log
+    </a>
+    <a href={`/api/trust-badge/${serverId}.svg`} class="trust-action" target="_blank">
+      Get Badge
+    </a>
+  </div>
+</div>
+
+<style>
+  .trust-dashboard {
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  }
+
+  /* ── Hero: 3 Numbers ─────────────────────── */
+  .trust-dashboard__hero {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 640px) {
+    .trust-dashboard__hero {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .trust-metric {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
+    background: rgba(148, 163, 184, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.08);
+    transition: all 0.2s;
+  }
+
+  .trust-metric:hover {
+    background: rgba(148, 163, 184, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .trust-metric--primary {
+    background: rgba(139, 92, 246, 0.06);
+    border-color: rgba(139, 92, 246, 0.15);
+  }
+
+  .trust-metric__ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(
+      var(--ring-color) calc(var(--ring-pct) * 3.6deg),
+      rgba(148, 163, 184, 0.1) 0
+    );
+    position: relative;
+  }
+
+  .trust-metric__ring::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    background: var(--color-bg, #0f172a);
+  }
+
+  .trust-metric__value {
+    position: relative;
+    z-index: 1;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--ring-color);
+    letter-spacing: -0.04em;
+  }
+
+  .trust-metric__badge {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto 0.75rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    background: rgba(148, 163, 184, 0.06);
+    border: 3px solid var(--badge-color);
+    padding-top: 28px;
+  }
+
+  .trust-metric__level {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--badge-color);
+    line-height: 1;
+  }
+
+  .trust-metric__level-max {
+    font-size: 1rem;
+    color: var(--color-text-muted, #64748b);
+    font-weight: 600;
+  }
+
+  .trust-metric__label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text, #e2e8f0);
+    margin-bottom: 0.2rem;
+  }
+
+  .trust-metric__sublabel {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #64748b);
+  }
+
+  /* ── Blockers ────────────────────────────── */
+  .trust-blockers {
+    margin-bottom: 1.5rem;
+  }
+
+  .trust-blockers__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text, #e2e8f0);
+    margin: 0 0 0.75rem;
+  }
+
+  .trust-blockers__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .trust-blocker {
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    border-left: 3px solid;
+  }
+
+  .trust-blocker--critical {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: #ef4444;
+  }
+
+  .trust-blocker--high {
+    background: rgba(245, 158, 11, 0.06);
+    border-color: #f59e0b;
+  }
+
+  .trust-blocker--medium {
+    background: rgba(148, 163, 184, 0.04);
+    border-color: #94a3b8;
+  }
+
+  .trust-blocker__head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .trust-blocker__severity {
+    font-size: 0.7rem;
+  }
+
+  .trust-blocker__category {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted, #94a3b8);
+  }
+
+  .trust-blocker__message {
+    font-size: 0.8rem;
+    color: var(--color-text, #e2e8f0);
+    margin: 0 0 0.2rem;
+    font-weight: 600;
+  }
+
+  .trust-blocker__impact {
+    font-size: 0.72rem;
+    color: var(--color-text-muted, #94a3b8);
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* ── Clear state ─────────────────────────── */
+  .trust-clear {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+    margin-bottom: 1.5rem;
+  }
+
+  .trust-clear__icon {
+    font-size: 1.2rem;
+  }
+
+  .trust-clear__text {
+    font-size: 0.8rem;
+    color: #34d399;
+    font-weight: 600;
+  }
+
+  /* ── Actions ─────────────────────────────── */
+  .trust-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .trust-action {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--color-text, #e2e8f0);
+    background: rgba(148, 163, 184, 0.06);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    transition: all 0.15s;
+  }
+
+  .trust-action:hover {
+    background: rgba(148, 163, 184, 0.12);
+  }
+
+  .trust-action--primary {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.25);
+    color: #a78bfa;
+  }
+
+  .trust-action--primary:hover {
+    background: rgba(139, 92, 246, 0.2);
+  }
+</style>
